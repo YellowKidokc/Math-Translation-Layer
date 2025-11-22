@@ -1,0 +1,10 @@
+{
+  "id": "theophysics-math-translator",
+  "name": "Theophysics Math Translation Layer",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Translates LaTeX mathematical equations to Theophysics Narrative descriptions",
+  "author": "YellowKidokc",
+  "authorUrl": "https://github.com/YellowKidokc/Math-Translation-Layer",
+  "isDesktopOnly": false
+}
