@@ -1,35 +1,30 @@
-import {
-    App,
-    Editor,
-    MarkdownView,
-    Menu,
-    Notice,
-    Plugin,
-    TFile,
-    TFolder
-} from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, Menu } from 'obsidian';
+import { MathTranslator } from './theophysics-math-translator';
 
-import { MathTranslator, TranslationResult } from './theophysics-math-translator';
-import {
-    TranslationModal,
-    ScanResultsModal,
-    FolderSelectorModal,
-    FolderScanResultsModal
-} from './modals';
+interface TheophysicsSettings {
+    scanFolder: string;
+    autoScan: boolean;
+    translationNotePath: string;
+}
 
-export default class TheophysicsMathTranslatorPlugin extends Plugin {
-    // Store scan results for dictionary export
-    private lastScanResults: Map<string, TranslationResult[]> = new Map();
+const DEFAULT_SETTINGS: TheophysicsSettings = {
+    scanFolder: '',
+    autoScan: false,
+    translationNotePath: 'Theophysics Translations/Math Dictionary.md'
+}
+
+export default class TheophysicsMathPlugin extends Plugin {
+    settings: TheophysicsSettings;
 
     async onload() {
-        console.log('Loading Theophysics Math Translation Layer');
+        await this.loadSettings();
 
         // Add ribbon icon
         this.addRibbonIcon('calculator', 'Theophysics Math Translator', () => {
-            new Notice('Select math and use "Translate Math to Narrative" command or right-click menu');
+            new Notice('Select text and use the command palette to translate!');
         });
 
-        // COMMAND 1: Translate selected math to narrative
+        // 1. Command: Translate Selection
         this.addCommand({
             id: 'theophysics-translate-math',
             name: 'Translate Math to Narrative',
@@ -39,12 +34,12 @@ export default class TheophysicsMathTranslatorPlugin extends Plugin {
                     const translation = MathTranslator.translate(selection);
                     new TranslationModal(this.app, selection, translation).open();
                 } else {
-                    new Notice("Please select a mathematical equation first.");
+                    new Notice("Please highlight an equation first.");
                 }
             }
         });
 
-        // COMMAND 2: Scan current file for math
+        // 2. Command: Scan Current File
         this.addCommand({
             id: 'theophysics-scan-current',
             name: 'Scan Current File for Math',
@@ -59,66 +54,42 @@ export default class TheophysicsMathTranslatorPlugin extends Plugin {
                 const translations = MathTranslator.translateDocument(content);
 
                 if (translations.length === 0) {
-                    new Notice("No mathematical expressions found in this file");
+                    new Notice("No math found in this file");
                     return;
                 }
 
-                // Store results for potential export
-                this.lastScanResults.clear();
-                this.lastScanResults.set(file.path, translations);
-
-                // Show results modal
                 new ScanResultsModal(this.app, file.basename, translations).open();
             }
         });
 
-        // COMMAND 3: Scan folder for all math
+        // 3. Command: Scan Folder Recursively
         this.addCommand({
             id: 'theophysics-scan-folder',
             name: 'Scan Folder for All Math',
             callback: async () => {
-                new FolderSelectorModal(this.app, async (folder: TFolder) => {
-                    await this.scanFolder(folder);
-                }).open();
+                if (!this.settings.scanFolder) {
+                    new Notice("Please set a scan folder in settings first");
+                    this.openSettings();
+                    return;
+                }
+
+                await this.scanFolderRecursively();
             }
         });
 
-        // COMMAND 4: Export translation dictionary
+        // 4. Command: Export Translation Dictionary
         this.addCommand({
             id: 'theophysics-export-dictionary',
             name: 'Export Translation Dictionary',
             callback: async () => {
-                if (this.lastScanResults.size === 0) {
-                    new Notice("No scan results to export. Please scan a file or folder first.");
-                    return;
-                }
-
-                await this.exportDictionary();
+                await this.exportTranslationDictionary();
             }
         });
 
-        // COMMAND 5: Rescan and update dictionary
-        this.addCommand({
-            id: 'theophysics-rescan-update',
-            name: 'Rescan and Update Dictionary',
-            callback: async () => {
-                // Get the root folder and scan everything
-                const rootFolder = this.app.vault.getRoot();
-                await this.scanFolder(rootFolder);
-
-                // Auto-export after scan
-                if (this.lastScanResults.size > 0) {
-                    new Notice("Vault scanned! Exporting updated dictionary...");
-                    await this.exportDictionary();
-                }
-            }
-        });
-
-        // RIGHT-CLICK CONTEXT MENU
+        // 5. Add context menu for selection
         this.registerEvent(
             this.app.workspace.on('editor-menu', (menu: Menu, editor: Editor, view: MarkdownView) => {
                 const selection = editor.getSelection();
-                // Show menu item if selection contains LaTeX indicators
                 if (selection && (selection.includes('$') || selection.includes('\\'))) {
                     menu.addItem((item) => {
                         item
@@ -133,277 +104,414 @@ export default class TheophysicsMathTranslatorPlugin extends Plugin {
             })
         );
 
-        // Add CSS styles
-        this.addStyles();
+        // Add settings tab
+        this.addSettingTab(new TheophysicsSettingTab(this.app, this));
     }
 
-    /**
-     * Scan a folder recursively for mathematical expressions
-     */
-    private async scanFolder(folder: TFolder): Promise<void> {
-        new Notice(`Scanning folder: ${folder.path}...`);
+    async scanFolderRecursively() {
+        const folder = this.app.vault.getAbstractFileByPath(this.settings.scanFolder);
 
-        this.lastScanResults.clear();
-        let totalFiles = 0;
-        let totalEquations = 0;
-
-        const scanRecursive = async (currentFolder: TFolder) => {
-            for (const child of currentFolder.children) {
-                if (child instanceof TFile && child.extension === 'md') {
-                    totalFiles++;
-                    const content = await this.app.vault.read(child);
-                    const translations = MathTranslator.translateDocument(content);
-
-                    if (translations.length > 0) {
-                        this.lastScanResults.set(child.path, translations);
-                        totalEquations += translations.length;
-                    }
-                } else if (child instanceof TFolder) {
-                    await scanRecursive(child);
-                }
-            }
-        };
-
-        await scanRecursive(folder);
-
-        new Notice(`Scan complete! Found ${totalEquations} equations in ${totalFiles} files.`);
-
-        if (totalEquations > 0) {
-            new FolderScanResultsModal(
-                this.app,
-                folder.path === '/' ? 'Root (entire vault)' : folder.path,
-                this.lastScanResults
-            ).open();
+        if (!folder || !(folder instanceof TFolder)) {
+            new Notice("Folder not found: " + this.settings.scanFolder);
+            return;
         }
-    }
 
-    /**
-     * Export translation dictionary as a markdown file
-     */
-    private async exportDictionary(): Promise<void> {
-        // Collect all translations
-        const allTranslations: TranslationResult[] = [];
+        new Notice("Scanning folder...");
 
-        for (const [filePath, translations] of this.lastScanResults) {
-            for (const translation of translations) {
-                // Add file information to the result
-                const enhancedResult: TranslationResult = {
-                    ...translation,
-                    location: { line: 0, column: 0 } // Could be enhanced with actual line numbers
-                };
-                allTranslations.push(enhancedResult);
+        const allTranslations: Array<{file: string, math: string, narrative: string}> = [];
+        const files = this.getMarkdownFilesRecursive(folder);
+
+        for (const file of files) {
+            const content = await this.app.vault.read(file);
+            const translations = MathTranslator.translateDocument(content);
+
+            for (const trans of translations) {
+                allTranslations.push({
+                    file: file.path,
+                    math: trans.original,
+                    narrative: trans.translation
+                });
             }
         }
 
         if (allTranslations.length === 0) {
-            new Notice("No translations to export");
+            new Notice("No math equations found in folder");
             return;
         }
 
-        // Generate dictionary content
-        let dictionaryContent = "# Theophysics Math Translation Dictionary\n\n";
-        dictionaryContent += `**Generated:** ${new Date().toLocaleString()}\n\n`;
-        dictionaryContent += `**Total Equations:** ${allTranslations.length}\n\n`;
-        dictionaryContent += `**Files Scanned:** ${this.lastScanResults.size}\n\n`;
-        dictionaryContent += "---\n\n";
+        // Show results and offer to save
+        new FolderScanModal(this.app, allTranslations, this).open();
+    }
 
-        // Create unique translations map
-        const uniqueTranslations = new Map<string, { translated: string, files: Set<string> }>();
+    getMarkdownFilesRecursive(folder: TFolder): TFile[] {
+        let files: TFile[] = [];
 
-        for (const [filePath, translations] of this.lastScanResults) {
-            for (const result of translations) {
-                if (!uniqueTranslations.has(result.original)) {
-                    uniqueTranslations.set(result.original, {
-                        translated: result.translated,
-                        files: new Set([filePath])
-                    });
-                } else {
-                    uniqueTranslations.get(result.original)!.files.add(filePath);
-                }
+        for (const child of folder.children) {
+            if (child instanceof TFile && child.extension === 'md') {
+                files.push(child);
+            } else if (child instanceof TFolder) {
+                files = files.concat(this.getMarkdownFilesRecursive(child));
             }
         }
 
-        dictionaryContent += "## All Translations\n\n";
-        let index = 1;
+        return files;
+    }
 
-        for (const [original, data] of uniqueTranslations) {
-            dictionaryContent += `### ${index}. ${original}\n\n`;
-            dictionaryContent += `**Translation:** ${data.translated}\n\n`;
-            dictionaryContent += `**Found in:**\n`;
-            for (const file of data.files) {
-                dictionaryContent += `- ${file}\n`;
-            }
-            dictionaryContent += "\n---\n\n";
-            index++;
+    async exportTranslationDictionary() {
+        const folder = this.app.vault.getAbstractFileByPath(this.settings.scanFolder);
+
+        if (!folder || !(folder instanceof TFolder)) {
+            new Notice("Please set a valid scan folder in settings");
+            return;
         }
 
-        // Add file-by-file breakdown
-        dictionaryContent += "## By File\n\n";
+        new Notice("Building translation dictionary...");
 
-        for (const [filePath, translations] of this.lastScanResults) {
-            if (translations.length === 0) continue;
+        const allTranslations: Array<{file: string, math: string, narrative: string}> = [];
+        const files = this.getMarkdownFilesRecursive(folder);
 
-            dictionaryContent += `### 📄 ${filePath}\n\n`;
-            dictionaryContent += `Found ${translations.length} equation${translations.length !== 1 ? 's' : ''}:\n\n`;
+        for (const file of files) {
+            const content = await this.app.vault.read(file);
+            const translations = MathTranslator.translateDocument(content);
 
-            translations.forEach((result, idx) => {
-                dictionaryContent += `${idx + 1}. ${result.original}\n`;
-                dictionaryContent += `   - ${result.translated}\n\n`;
+            for (const trans of translations) {
+                allTranslations.push({
+                    file: file.path,
+                    math: trans.original,
+                    narrative: trans.translation
+                });
+            }
+        }
+
+        // Create markdown content
+        let mdContent = `# Theophysics Math Translation Dictionary\n\n`;
+        mdContent += `> Auto-generated on ${new Date().toLocaleString()}\n\n`;
+        mdContent += `Total translations: ${allTranslations.length}\n\n`;
+        mdContent += `---\n\n`;
+
+        // Group by file
+        const byFile = new Map<string, Array<{math: string, narrative: string}>>();
+
+        for (const trans of allTranslations) {
+            if (!byFile.has(trans.file)) {
+                byFile.set(trans.file, []);
+            }
+            byFile.get(trans.file)!.push({
+                math: trans.math,
+                narrative: trans.narrative
             });
-
-            dictionaryContent += "\n";
         }
 
-        // Save the dictionary file
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        const fileName = `Theophysics-Math-Dictionary-${timestamp}.md`;
+        // Write grouped content
+        for (const [filepath, translations] of byFile) {
+            mdContent += `## ${filepath}\n\n`;
 
-        try {
-            await this.app.vault.create(fileName, dictionaryContent);
-            new Notice(`Dictionary exported to: ${fileName}`);
-
-            // Open the newly created file
-            const file = this.app.vault.getAbstractFileByPath(fileName);
-            if (file instanceof TFile) {
-                await this.app.workspace.getLeaf().openFile(file);
+            for (const trans of translations) {
+                mdContent += `### Math Layer\n\`\`\`latex\n${trans.math}\n\`\`\`\n\n`;
+                mdContent += `### Narrative Layer\n> "${trans.narrative}"\n\n`;
+                mdContent += `---\n\n`;
             }
-        } catch (error) {
-            console.error('Error exporting dictionary:', error);
-            new Notice('Error exporting dictionary. Check console for details.');
+        }
+
+        // Save to vault
+        const outputPath = this.settings.translationNotePath;
+        const folder_path = outputPath.substring(0, outputPath.lastIndexOf('/'));
+
+        // Create folder if it doesn't exist
+        if (folder_path && !this.app.vault.getAbstractFileByPath(folder_path)) {
+            await this.app.vault.createFolder(folder_path);
+        }
+
+        // Write or update file
+        const existingFile = this.app.vault.getAbstractFileByPath(outputPath);
+        if (existingFile instanceof TFile) {
+            await this.app.vault.modify(existingFile, mdContent);
+        } else {
+            await this.app.vault.create(outputPath, mdContent);
+        }
+
+        new Notice(`Dictionary saved to ${outputPath}`);
+
+        // Open the file
+        const file = this.app.vault.getAbstractFileByPath(outputPath);
+        if (file instanceof TFile) {
+            this.app.workspace.getLeaf().openFile(file);
         }
     }
 
-    /**
-     * Add custom CSS styles
-     */
-    private addStyles(): void {
-        const style = document.createElement('style');
-        style.textContent = `
-            /* Translation Modal Styles */
-            .theophysics-translation-modal .math-display {
-                background-color: var(--background-secondary);
-                padding: 1em;
-                border-radius: 5px;
-                margin: 1em 0;
-                font-family: monospace;
-            }
+    openSettings() {
+        // @ts-ignore
+        this.app.setting.open();
+        // @ts-ignore
+        this.app.setting.openTabById(this.manifest.id);
+    }
 
-            .theophysics-translation-modal .translation-text {
-                background-color: var(--background-primary-alt);
-                padding: 1em;
-                border-radius: 5px;
-                margin: 1em 0;
-                font-size: 1.1em;
-                line-height: 1.6;
-            }
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
 
-            .modal-button-container {
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-                margin-top: 1.5em;
-            }
+    async saveSettings() {
+        await this.saveData(this.settings);
+    }
+}
 
-            .modal-button-container button {
-                padding: 8px 16px;
-                border-radius: 4px;
-                cursor: pointer;
-            }
+// ==========================================
+// MODAL: Single Translation Display
+// ==========================================
+class TranslationModal extends Modal {
+    original: string;
+    translation: string;
 
-            /* Scan Results Modal Styles */
-            .theophysics-scan-results-modal .scan-results-list {
-                max-height: 60vh;
-                overflow-y: auto;
-                padding: 1em 0;
-            }
+    constructor(app: App, original: string, translation: string) {
+        super(app);
+        this.original = original;
+        this.translation = translation;
+    }
 
-            .scan-result-item {
-                margin: 1.5em 0;
-                padding: 1em;
-                background-color: var(--background-secondary);
-                border-radius: 5px;
-            }
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.addClass('theophysics-translation-modal');
 
-            .scan-result-item code {
-                background-color: var(--background-primary);
-                padding: 0.5em;
-                border-radius: 3px;
-            }
+        contentEl.createEl("h2", { text: "🔮 Theophysics Translation" });
 
-            .copy-translation-btn {
-                margin-top: 0.5em;
-                padding: 5px 12px;
-                font-size: 0.9em;
-                cursor: pointer;
-            }
+        contentEl.createEl("h3", { text: "Math Layer:" });
+        const mathCode = contentEl.createEl("code", { cls: "math-original" });
+        mathCode.style.display = "block";
+        mathCode.style.padding = "10px";
+        mathCode.style.backgroundColor = "var(--background-secondary)";
+        mathCode.style.borderRadius = "5px";
+        mathCode.style.marginBottom = "15px";
+        mathCode.setText(this.original);
 
-            /* Folder Selector Modal Styles */
-            .theophysics-folder-selector-modal .folder-list {
-                max-height: 50vh;
-                overflow-y: auto;
-                margin: 1em 0;
-            }
+        contentEl.createEl("h3", { text: "Narrative Layer:" });
+        const narrative = contentEl.createEl("div", { cls: "theophysics-narrative" });
+        narrative.style.fontSize = "1.2em";
+        narrative.style.fontStyle = "italic";
+        narrative.style.color = "var(--interactive-accent)";
+        narrative.style.padding = "15px";
+        narrative.style.backgroundColor = "var(--background-secondary)";
+        narrative.style.borderRadius = "5px";
+        narrative.style.marginBottom = "20px";
+        narrative.setText(`"${this.translation}"`);
 
-            .folder-item {
-                margin: 0.5em 0;
-            }
+        const btnContainer = contentEl.createEl("div", { cls: "button-container" });
+        btnContainer.style.display = "flex";
+        btnContainer.style.gap = "10px";
 
-            .folder-select-btn {
-                width: 100%;
-                padding: 10px;
-                text-align: left;
-                cursor: pointer;
-                border-radius: 4px;
-                background-color: var(--background-secondary);
-            }
+        const copyBtn = btnContainer.createEl("button", { text: "📋 Copy Narrative" });
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(this.translation);
+            new Notice("Copied to clipboard!");
+        };
 
-            .folder-select-btn:hover {
-                background-color: var(--background-modifier-hover);
-            }
+        const copyBothBtn = btnContainer.createEl("button", { text: "📄 Copy Both" });
+        copyBothBtn.onclick = () => {
+            const both = `Math: ${this.original}\n\nNarrative: "${this.translation}"`;
+            navigator.clipboard.writeText(both);
+            new Notice("Copied both layers!");
+        };
 
-            /* Folder Scan Results Modal Styles */
-            .theophysics-folder-scan-modal .scan-summary {
-                background-color: var(--background-secondary);
-                padding: 1em;
-                border-radius: 5px;
-                margin: 1em 0;
-            }
+        const closeBtn = btnContainer.createEl("button", { text: "✖ Close" });
+        closeBtn.onclick = () => this.close();
+    }
 
-            .folder-scan-results {
-                max-height: 60vh;
-                overflow-y: auto;
-                margin: 1em 0;
-            }
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
 
-            .file-section {
-                margin: 1.5em 0;
-                padding: 1em;
-                background-color: var(--background-secondary);
-                border-radius: 5px;
-            }
+// ==========================================
+// MODAL: Current File Scan Results
+// ==========================================
+class ScanResultsModal extends Modal {
+    filename: string;
+    translations: Array<{original: string, translation: string, position: number}>;
 
-            .result-item-compact {
-                margin: 0.8em 0;
-                padding-left: 1em;
-            }
+    constructor(app: App, filename: string, translations: Array<{original: string, translation: string, position: number}>) {
+        super(app);
+        this.filename = filename;
+        this.translations = translations;
+    }
 
-            .result-item-compact code {
-                background-color: var(--background-primary);
-                padding: 2px 6px;
-                border-radius: 3px;
-                font-size: 0.9em;
-            }
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
 
-            .translation-preview {
-                color: var(--text-muted);
-                font-style: italic;
-                margin-left: 1em;
-            }
+        contentEl.createEl("h2", { text: `📊 Math Found in "${this.filename}"` });
+        contentEl.createEl("p", { text: `Found ${this.translations.length} equation(s)` });
+
+        const container = contentEl.createDiv({ cls: "scan-results-container" });
+        container.style.maxHeight = "500px";
+        container.style.overflowY = "auto";
+
+        this.translations.forEach((trans, idx) => {
+            const item = container.createDiv({ cls: "scan-result-item" });
+            item.style.marginBottom = "20px";
+            item.style.padding = "10px";
+            item.style.backgroundColor = "var(--background-secondary)";
+            item.style.borderRadius = "5px";
+
+            item.createEl("h4", { text: `Equation ${idx + 1}` });
+
+            const mathBox = item.createEl("code");
+            mathBox.style.display = "block";
+            mathBox.style.marginBottom = "10px";
+            mathBox.setText(trans.original);
+
+            const narrative = item.createEl("div");
+            narrative.style.fontStyle = "italic";
+            narrative.style.color = "var(--interactive-accent)";
+            narrative.setText(`"${trans.translation}"`);
+        });
+
+        const closeBtn = contentEl.createEl("button", { text: "Close" });
+        closeBtn.onclick = () => this.close();
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
+// ==========================================
+// MODAL: Folder Scan Results
+// ==========================================
+class FolderScanModal extends Modal {
+    translations: Array<{file: string, math: string, narrative: string}>;
+    plugin: TheophysicsMathPlugin;
+
+    constructor(app: App, translations: Array<{file: string, math: string, narrative: string}>, plugin: TheophysicsMathPlugin) {
+        super(app);
+        this.translations = translations;
+        this.plugin = plugin;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+
+        contentEl.createEl("h2", { text: "📚 Folder Scan Complete" });
+        contentEl.createEl("p", { text: `Found ${this.translations.length} equations across multiple files` });
+
+        const fileCount = new Set(this.translations.map(t => t.file)).size;
+        contentEl.createEl("p", { text: `Files scanned: ${fileCount}` });
+
+        const container = contentEl.createDiv({ cls: "folder-scan-preview" });
+        container.style.maxHeight = "300px";
+        container.style.overflowY = "auto";
+        container.style.marginBottom = "20px";
+        container.style.padding = "10px";
+        container.style.backgroundColor = "var(--background-secondary)";
+        container.style.borderRadius = "5px";
+
+        // Show first 5 translations as preview
+        const preview = this.translations.slice(0, 5);
+        preview.forEach((trans, idx) => {
+            const item = container.createDiv();
+            item.style.marginBottom = "10px";
+            item.createEl("strong", { text: trans.file });
+            item.createEl("br");
+            item.createEl("code", { text: trans.math });
+            item.createEl("br");
+            const narrative = item.createEl("span");
+            narrative.style.fontStyle = "italic";
+            narrative.style.color = "var(--interactive-accent)";
+            narrative.setText(`"${trans.narrative}"`);
+            item.createEl("hr");
+        });
+
+        if (this.translations.length > 5) {
+            container.createEl("p", { text: `... and ${this.translations.length - 5} more` });
+        }
+
+        const btnContainer = contentEl.createDiv();
+        btnContainer.style.display = "flex";
+        btnContainer.style.gap = "10px";
+
+        const exportBtn = btnContainer.createEl("button", { text: "📖 Export Dictionary" });
+        exportBtn.onclick = async () => {
+            this.close();
+            await this.plugin.exportTranslationDictionary();
+        };
+
+        const closeBtn = btnContainer.createEl("button", { text: "Close" });
+        closeBtn.onclick = () => this.close();
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+}
+
+// ==========================================
+// SETTINGS TAB
+// ==========================================
+class TheophysicsSettingTab extends PluginSettingTab {
+    plugin: TheophysicsMathPlugin;
+
+    constructor(app: App, plugin: TheophysicsMathPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+
+    display(): void {
+        const { containerEl } = this;
+        containerEl.empty();
+
+        containerEl.createEl('h2', { text: 'Theophysics Math Translator Settings' });
+
+        new Setting(containerEl)
+            .setName('Scan Folder')
+            .setDesc('Folder to recursively scan for math equations (e.g., "Papers" or "Research/Theophysics")')
+            .addText(text => text
+                .setPlaceholder('Papers')
+                .setValue(this.plugin.settings.scanFolder)
+                .onChange(async (value) => {
+                    this.plugin.settings.scanFolder = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Translation Dictionary Path')
+            .setDesc('Where to save the auto-generated translation dictionary')
+            .addText(text => text
+                .setPlaceholder('Theophysics Translations/Math Dictionary.md')
+                .setValue(this.plugin.settings.translationNotePath)
+                .onChange(async (value) => {
+                    this.plugin.settings.translationNotePath = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Auto-scan on startup')
+            .setDesc('Automatically scan folder when Obsidian opens')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.autoScan)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoScan = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // Info section
+        containerEl.createEl('h3', { text: 'Usage Guide' });
+        const guide = containerEl.createDiv();
+        guide.innerHTML = `
+            <p><strong>Quick Translation:</strong></p>
+            <ul>
+                <li>Highlight any equation in your note</li>
+                <li>Right-click → "Translate to Narrative"</li>
+                <li>Or use Command Palette → "Translate Math to Narrative"</li>
+            </ul>
+            <p><strong>Scan & Export:</strong></p>
+            <ul>
+                <li>Set a scan folder above (e.g., "Papers")</li>
+                <li>Use "Scan Folder for All Math" from command palette</li>
+                <li>Export dictionary to get a master translation document</li>
+            </ul>
         `;
-        document.head.appendChild(style);
-    }
-
-    onunload() {
-        console.log('Unloading Theophysics Math Translation Layer');
     }
 }

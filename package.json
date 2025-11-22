@@ -1,15 +1,15 @@
 {
   "name": "theophysics-math-translator",
   "version": "1.0.0",
-  "description": "Translates LaTeX mathematical equations to Theophysics Narrative descriptions",
+  "description": "Obsidian plugin for translating LaTeX equations to Theophysics narrative language",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
-  "keywords": ["obsidian", "plugin", "theophysics", "math", "latex"],
-  "author": "YellowKidokc",
+  "keywords": [],
+  "author": "",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^16.11.6",

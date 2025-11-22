@@ -1,349 +1,201 @@
 /**
- * Theophysics Math Translation Layer
- * Translates LaTeX mathematical equations to Theophysics Narrative descriptions
+ * Theophysics Math Translator
+ * Converts standard LaTeX physics notation into Theophysics narrative language.
  */
 
-export interface TranslationResult {
-    original: string;
-    translated: string;
-    location?: {
-        line: number;
-        column: number;
-    };
-}
-
 export class MathTranslator {
-    /**
-     * Core symbol mappings from mathematical notation to Theophysics concepts
-     */
-    private static symbolMap: Record<string, string> = {
-        // Greek letters - Core Theophysics symbols
-        '\\chi': 'the Logos Field',
-        '\\Chi': 'the Logos Field',
-        '\\psi': 'the Soul Function',
-        '\\Psi': 'the Soul Function',
-        '\\phi': 'the Divine Proportion',
-        '\\Phi': 'the Divine Proportion',
-        '\\theta': 'the Angle of Faith',
-        '\\Theta': 'the Angle of Faith',
-        '\\alpha': 'the Beginning Constant',
-        '\\omega': 'the End Constant',
-        '\\Omega': 'the Ultimate Completion',
-        '\\lambda': 'the Wavelength of Grace',
-        '\\sigma': 'the Standard Deviation of Faith',
-        '\\tau': 'the Time Constant of Transformation',
-        '\\delta': 'the Change in Being',
-        '\\Delta': 'the Total Change',
-        '\\epsilon': 'the Small Measure of Grace',
-        '\\gamma': 'the Constant of Glory',
-        '\\mu': 'the Mean of Mercy',
-        '\\nu': 'the Frequency of Prayer',
-        '\\rho': 'the Density of Righteousness',
-        '\\xi': 'the Unknown Variable of Mystery',
 
-        // Operators
-        '\\int': 'the integral',
-        '\\sum': 'the sum',
-        '\\prod': 'the product',
-        '\\nabla': 'the gradient',
-        '\\partial': 'the partial derivative',
-        '\\infty': 'infinity',
-        '\\lim': 'the limit',
+    // ==========================================
+    // LAYER 1: FULL EQUATION OVERRIDES (Context Is King)
+    // ==========================================
+    private static readonly EQUATION_MAP: Record<string, string> = {
+        // Master Equation
+        "\\\\chi\\s*=\\s*\\\\int\\s*\\(G\\s*\\\\cdot\\s*K\\)\\s*d\\\\Omega":
+            "The Logos Field equals the integral of Grace times Knowledge over all creation",
 
-        // Functions
-        '\\sin': 'the sine',
-        '\\cos': 'the cosine',
-        '\\tan': 'the tangent',
-        '\\log': 'the logarithm',
-        '\\ln': 'the natural logarithm',
-        '\\exp': 'the exponential',
+        // Modified Einstein (Paper 1)
+        "G_\\{\\\\mu\\\\nu\\}\\s*\\+\\s*\\\\Lambda\\s*g_\\{\\\\mu\\\\nu\\}":
+            "Spacetime curvature plus the cosmological constant",
+
+        // Trinity Actualization (Paper 2)
+        "FQ\\s*\\\\ge\\s*\\\\Theta_c":
+            "Faith intensity times Quantum Potential must exceed the Actualization Threshold",
+
+        // Soul Field Klein-Gordon (Paper 5)
+        "\\(\\\\Box\\s*\\+\\s*m_S\\^2\\)\\\\Psi_S\\s*=\\s*0":
+            "The wave operator plus the soul field mass squared, acting on the soul field, equals zero",
+
+        // Black Hole Entropy (Paper 7)
+        "S_\\{BH\\}\\s*=\\s*\\\\frac\\{k_B\\s*A\\}\\{4\\\\ell_P\\^2\\}":
+            "The Black Hole entropy equals Boltzmann's constant times the Horizon Area, divided by four times the Planck length squared",
+
+        // Hubble's Law (Paper 8)
+        "v\\s*=\\s*H_0\\s*d":
+            "Recessional velocity equals the Hubble expansion rate times distance"
+    };
+
+    // ==========================================
+    // LAYER 2: MATH STRUCTURES (Grammar)
+    // ==========================================
+    private static readonly STRUCTURE_MAP: Record<string, string> = {
+        // Fractions
+        "\\\\frac\\{(.+?)\\}\\{(.+?)\\}": "the ratio of $1 to $2",
+
+        // Roots
+        "\\\\sqrt\\{-g\\}": "the spacetime volume factor",
+        "\\\\sqrt\\{(.+?)\\}": "the square root of $1",
+
+        // Powers
+        "\\^2": " squared",
+        "\\^3": " cubed",
+        "\\^4": " to the fourth",
+        "\\^\\{?(.+?)\\}?": " to the power of $1",
+
+        // Subscripts
+        "_\\{?(.+?)\\}?": " sub $1",
+
+        // Integrals & Sums
+        "\\\\int\\s*d\\^4x": "integrating over all spacetime",
+        "\\\\int": "the integral of",
+        "\\\\sum": "the sum of",
+
+        // Derivatives
+        "\\\\partial_\\\\mu": "the gradient in direction mu",
+        "\\\\partial": "the change in",
+        "\\\\nabla\\^2": "the curvature of",
+        "\\\\nabla": "the gradient of",
+        "\\\\Box": "the wave operator",
 
         // Relations
-        '\\equiv': 'is equivalent to',
-        '\\approx': 'is approximately',
-        '\\neq': 'is not equal to',
-        '\\leq': 'is less than or equal to',
-        '\\geq': 'is greater than or equal to',
-        '\\propto': 'is proportional to',
+        "\\\\cdot": " times ",
+        "\\\\approx": " is approximately ",
+        "\\\\ge": " is greater than or equal to ",
+        "\\\\le": " is less than or equal to ",
+        "\\\\equiv": " is defined as ",
+        "\\\\rightarrow": " leads to ",
 
-        // Special symbols
-        '\\hbar': 'the Planck constant of divine action',
-        '\\ell': 'the characteristic length',
-        '\\prime': 'prime',
-        '\\cdot': 'times',
-        '\\times': 'cross product with',
-        '\\div': 'divided by',
-        '\\pm': 'plus or minus',
-        '\\mp': 'minus or plus',
+        // Constants
+        "\\\\infty": "infinity",
+        "\\(2\\\\pi\\)\\^3": "the normalization factor"
+    };
 
-        // Sets and logic
-        '\\in': 'is in',
-        '\\notin': 'is not in',
-        '\\subset': 'is a subset of',
-        '\\subseteq': 'is a subset or equal to',
-        '\\cup': 'union with',
-        '\\cap': 'intersection with',
-        '\\emptyset': 'the empty set',
-        '\\exists': 'there exists',
-        '\\forall': 'for all',
+    // ==========================================
+    // LAYER 3: SYMBOL MAPPING (Vocabulary)
+    // ==========================================
+    private static readonly SYMBOL_MAP: Record<string, string> = {
+        // --- Theophysics Core ---
+        "\\\\chi": "the Logos Field",
+        "\\\\Psi_S": "the Soul Field",
+        "\\\\Psi": "the Field",
+        "\\\\psi": "the wavefunction",
+        "\\\\Phi": "integrated information",
 
-        // Arrows
-        '\\rightarrow': 'leads to',
-        '\\Rightarrow': 'implies',
-        '\\leftarrow': 'comes from',
-        '\\Leftarrow': 'is implied by',
-        '\\leftrightarrow': 'is equivalent to',
-        '\\Leftrightarrow': 'if and only if',
+        // --- Theophysics Variables (Context Sensitive) ---
+        "\\bG\\b": "Grace",
+        "\\bS\\b": "Entropy",
+        "\\bC\\b": "Coherence",
+        "\\bF\\b": "Faith",
+        "\\bQ\\b": "Quantum Potential",
+        "\\bW\\b": "Will Current",
+        "\\bK\\b": "Knowledge",
+        "\\bR\\b": "Resurrection",
+
+        // --- Constants ---
+        "\\\\Theta_c": "the Actualization Threshold",
+        "\\\\Lambda": "the Cosmological Constant",
+        "\\\\ell_P": "the Planck Length",
+        "k_B": "Boltzmann's Constant",
+        "G_N": "Newton's Constant",
+        "\\bc\\b": "the speed of light",
+        "\\\\hbar": "h-bar",
+
+        // --- QFT & Notation ---
+        "\\\\dagger": " dagger",
+        "\\\\langle": "the expectation of ",
+        "\\\\rangle": "",
+        "\\\\mathcal\\{L\\}": "the Lagrangian",
+        "\\\\mathcal\\{H\\}": "the Hamiltonian"
     };
 
     /**
-     * Variable mappings for Theophysics-specific variables
+     * Translate raw LaTeX string into Theophysics Narrative
      */
-    private static variableMap: Record<string, string> = {
-        'G': 'Grace',
-        'K': 'Knowledge',
-        'F': 'Faith',
-        'L': 'Love',
-        'H': 'Hope',
-        'W': 'Wisdom',
-        'S': 'Spirit',
-        'T': 'Truth',
-        'P': 'Power',
-        'E': 'Energy',
-        'M': 'Mass',
-        'c': 'the speed of light',
-        't': 'time',
-        'x': 'position',
-        'v': 'velocity',
-        'a': 'acceleration',
-        'r': 'radius',
-        'n': 'number',
-        'i': 'index',
-        'j': 'index',
-        'k': 'index',
-    };
+    static translate(latex: string): string {
+        let clean = latex.trim();
+
+        // 0. Basic Cleanup (strip $$ and $)
+        clean = clean.replace(/\$\$/g, '').replace(/\$/g, '');
+
+        // 1. Apply Full Equation Overrides (Longest Match First)
+        for (const [pattern, replacement] of Object.entries(this.EQUATION_MAP)) {
+            const regex = new RegExp(pattern, 'g');
+            clean = clean.replace(regex, replacement);
+        }
+
+        // 2. Apply Structure Maps (Recursive patterns)
+        for (const [pattern, replacement] of Object.entries(this.STRUCTURE_MAP)) {
+            const regex = new RegExp(pattern, 'g');
+            clean = clean.replace(regex, replacement);
+        }
+
+        // 3. Apply Symbol Maps
+        for (const [pattern, replacement] of Object.entries(this.SYMBOL_MAP)) {
+            const regex = new RegExp(pattern, 'g');
+            clean = clean.replace(regex, replacement);
+        }
+
+        // 4. Final cleanup of any remaining LaTeX artifacts
+        clean = clean.replace(/\\text\{(.+?)\}/g, '$1'); // Keep text inside \text{}
+        clean = clean.replace(/\s+/g, ' ').trim(); // Collapse spaces
+
+        return clean;
+    }
 
     /**
-     * Extract all math expressions from a document
+     * Extract all math blocks from markdown content
+     * Returns array of {latex, start, end} objects
      */
-    public static extractMathExpressions(content: string): Array<{math: string, type: 'inline' | 'display', position: number}> {
-        const results: Array<{math: string, type: 'inline' | 'display', position: number}> = [];
+    static extractMathBlocks(content: string): Array<{latex: string, start: number, end: number, isBlock: boolean}> {
+        const blocks: Array<{latex: string, start: number, end: number, isBlock: boolean}> = [];
 
-        // Find display math ($$...$$)
-        const displayRegex = /\$\$([\s\S]*?)\$\$/g;
+        // Match block math ($$...$$)
+        const blockRegex = /\$\$([^\$]+)\$\$/g;
         let match;
-        while ((match = displayRegex.exec(content)) !== null) {
-            results.push({
-                math: match[1].trim(),
-                type: 'display',
-                position: match.index
+
+        while ((match = blockRegex.exec(content)) !== null) {
+            blocks.push({
+                latex: match[1].trim(),
+                start: match.index,
+                end: match.index + match[0].length,
+                isBlock: true
             });
         }
 
-        // Find inline math ($...$) - but not display math
-        const inlineRegex = /(?<!\$)\$(?!\$)(.*?)\$(?!\$)/g;
+        // Match inline math ($...$) but avoid $$
+        const inlineRegex = /(?<!\$)\$([^\$\n]+?)\$(?!\$)/g;
+
         while ((match = inlineRegex.exec(content)) !== null) {
-            results.push({
-                math: match[1].trim(),
-                type: 'inline',
-                position: match.index
+            blocks.push({
+                latex: match[1].trim(),
+                start: match.index,
+                end: match.index + match[0].length,
+                isBlock: false
             });
         }
 
-        return results.sort((a, b) => a.position - b.position);
+        // Sort by position
+        return blocks.sort((a, b) => a.start - b.start);
     }
 
     /**
-     * Main translation function
+     * Translate all math in a document and return mapping
      */
-    public static translate(mathExpression: string): string {
-        // Remove surrounding $ signs if present
-        let expr = mathExpression.trim();
-        expr = expr.replace(/^\$+/, '').replace(/\$+$/, '').trim();
-
-        if (!expr) {
-            return "No mathematical expression found";
-        }
-
-        // Handle special patterns first
-        const specialTranslation = this.translateSpecialPatterns(expr);
-        if (specialTranslation) {
-            return specialTranslation;
-        }
-
-        // General translation
-        return this.translateGeneral(expr);
-    }
-
-    /**
-     * Translate special mathematical patterns
-     */
-    private static translateSpecialPatterns(expr: string): string | null {
-        // Pattern: \chi = \int G \cdot K
-        if (/\\chi\s*=\s*\\int.*G.*K/.test(expr)) {
-            return "The Logos Field equals the integral of Grace times Knowledge";
-        }
-
-        // Pattern: E = mc^2
-        if (/E\s*=\s*m\s*c\^2/.test(expr) || /E\s*=\s*m\s*c\^{2}/.test(expr)) {
-            return "Energy equals mass times the speed of light squared";
-        }
-
-        // Pattern: F = ma
-        if (/F\s*=\s*m\s*a/.test(expr)) {
-            return "Faith equals mass times acceleration";
-        }
-
-        // Pattern: Integral expressions
-        const integralMatch = expr.match(/\\int(?:_\{?([^}]*?)\}?)?(?:\^\{?([^}]*?)\}?)?\s*(.+?)\s*d([a-z])/);
-        if (integralMatch) {
-            const [, lower, upper, integrand, variable] = integralMatch;
-            const translatedIntegrand = this.translateSimple(integrand);
-            const translatedVar = this.variableMap[variable] || variable;
-
-            let result = "the integral of " + translatedIntegrand;
-            if (lower && upper) {
-                result += ` from ${lower} to ${upper}`;
-            }
-            result += ` with respect to ${translatedVar}`;
-            return result;
-        }
-
-        // Pattern: Sum expressions
-        const sumMatch = expr.match(/\\sum(?:_\{?([^}]*?)\}?)?(?:\^\{?([^}]*?)\}?)?\s*(.+)/);
-        if (sumMatch) {
-            const [, lower, upper, summand] = sumMatch;
-            const translatedSummand = this.translateSimple(summand);
-
-            let result = "the sum of " + translatedSummand;
-            if (lower && upper) {
-                result += ` from ${lower} to ${upper}`;
-            }
-            return result;
-        }
-
-        // Pattern: Fractions
-        const fracMatch = expr.match(/\\frac\{([^}]+)\}\{([^}]+)\}/);
-        if (fracMatch) {
-            const [, numerator, denominator] = fracMatch;
-            const transNum = this.translateSimple(numerator);
-            const transDen = this.translateSimple(denominator);
-            return `${transNum} divided by ${transDen}`;
-        }
-
-        // Pattern: Square roots
-        const sqrtMatch = expr.match(/\\sqrt(?:\[([^\]]+)\])?\{([^}]+)\}/);
-        if (sqrtMatch) {
-            const [, root, content] = sqrtMatch;
-            const transContent = this.translateSimple(content);
-            if (root) {
-                return `the ${root}th root of ${transContent}`;
-            }
-            return `the square root of ${transContent}`;
-        }
-
-        return null;
-    }
-
-    /**
-     * General translation for simple expressions
-     */
-    private static translateGeneral(expr: string): string {
-        let result = expr;
-
-        // Replace symbols
-        for (const [latex, meaning] of Object.entries(this.symbolMap)) {
-            const regex = new RegExp(latex.replace(/\\/g, '\\\\'), 'g');
-            result = result.replace(regex, meaning);
-        }
-
-        // Replace variables
-        for (const [variable, meaning] of Object.entries(this.variableMap)) {
-            const regex = new RegExp(`\\b${variable}\\b`, 'g');
-            result = result.replace(regex, meaning);
-        }
-
-        // Clean up operators
-        result = result.replace(/\*/g, ' times ');
-        result = result.replace(/\+/g, ' plus ');
-        result = result.replace(/(?<!\w)-(?!\w)/g, ' minus ');
-        result = result.replace(/=/g, ' equals ');
-        result = result.replace(/\^{?(\w+)}?/g, ' to the power of $1');
-        result = result.replace(/_\{?([^}]+)\}?/g, ' subscript $1');
-        result = result.replace(/\\cdot/g, ' times ');
-        result = result.replace(/\\/g, '');
-        result = result.replace(/[{}]/g, '');
-
-        // Clean up spacing
-        result = result.replace(/\s+/g, ' ').trim();
-
-        return result;
-    }
-
-    /**
-     * Translate a simple sub-expression
-     */
-    private static translateSimple(expr: string): string {
-        expr = expr.trim();
-
-        // Check if it's a known symbol
-        if (this.symbolMap[expr]) {
-            return this.symbolMap[expr];
-        }
-
-        // Check if it's a known variable
-        if (this.variableMap[expr]) {
-            return this.variableMap[expr];
-        }
-
-        // Otherwise, do general translation
-        return this.translateGeneral(expr);
-    }
-
-    /**
-     * Translate all math in a document
-     */
-    public static translateDocument(content: string): TranslationResult[] {
-        const mathExpressions = this.extractMathExpressions(content);
-        const results: TranslationResult[] = [];
-
-        for (const expr of mathExpressions) {
-            const translated = this.translate(expr.math);
-            results.push({
-                original: `${expr.type === 'display' ? '$$' : '$'}${expr.math}${expr.type === 'display' ? '$$' : '$'}`,
-                translated: translated
-            });
-        }
-
-        return results;
-    }
-
-    /**
-     * Generate a translation dictionary from multiple documents
-     */
-    public static generateDictionary(results: TranslationResult[]): string {
-        let output = "# Theophysics Math Translation Dictionary\n\n";
-        output += `Generated: ${new Date().toLocaleString()}\n\n`;
-        output += `Total equations found: ${results.length}\n\n`;
-        output += "---\n\n";
-
-        const uniqueTranslations = new Map<string, string>();
-
-        for (const result of results) {
-            if (!uniqueTranslations.has(result.original)) {
-                uniqueTranslations.set(result.original, result.translated);
-            }
-        }
-
-        output += "## Translations\n\n";
-        let index = 1;
-        for (const [original, translated] of uniqueTranslations) {
-            output += `### ${index}. ${original}\n\n`;
-            output += `**Translation:** ${translated}\n\n`;
-            output += "---\n\n";
-            index++;
-        }
-
-        return output;
+    static translateDocument(content: string): Array<{original: string, translation: string, position: number}> {
+        const blocks = this.extractMathBlocks(content);
+        return blocks.map(block => ({
+            original: block.latex,
+            translation: this.translate(block.latex),
+            position: block.start
+        }));
     }
 }

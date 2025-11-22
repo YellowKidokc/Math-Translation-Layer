@@ -1,269 +1,224 @@
 # Theophysics Math Translation Layer
 
-An Obsidian plugin that translates LaTeX mathematical equations into Theophysics Narrative descriptions, bridging the gap between mathematical formalism and spiritual/philosophical meaning.
+**The Rosetta Stone Between Mathematics and Theology**
 
-## 🌟 Features
+An Obsidian plugin that translates LaTeX physics equations into human-readable "Theophysics Narrative" language. Turn `$\chi = \int G \cdot K$` into _"The Logos Field equals the integral of Grace times Knowledge"_.
 
-- **Instant Translation**: Select any LaTeX equation and translate it to narrative form
-- **Right-Click Context Menu**: Quick access to translation directly from the editor
-- **File Scanning**: Scan individual files or entire folders for mathematical expressions
-- **Dictionary Export**: Generate comprehensive translation dictionaries showing all math found with their translations
-- **Rescan & Update**: Keep your translation dictionary up-to-date as your vault evolves
+---
 
-## 📖 Example Translations
+## ✨ Features
 
-| LaTeX | Theophysics Narrative |
-|-------|----------------------|
-| `$\chi = \int G \cdot K$` | The Logos Field equals the integral of Grace times Knowledge |
-| `$E = mc^2$` | Energy equals mass times the speed of light squared |
-| `$\psi = \sin(\theta)$` | The Soul Function equals the sine of the Angle of Faith |
-| `$F = ma$` | Faith equals mass times acceleration |
+### 🔮 Instant Translation
+- **Highlight & Translate**: Select any equation, right-click → "Translate to Narrative"
+- **Beautiful Modal**: See both Math Layer and Narrative Layer side-by-side
+- **One-Click Copy**: Copy translations to clipboard instantly
 
-## 🎯 Core Symbol Mappings
+### 📚 Batch Processing
+- **Scan Current File**: Extract and translate all math in the active note
+- **Recursive Folder Scan**: Process entire folders of research papers
+- **Auto-Export Dictionary**: Generate a master translation reference document
 
-### Greek Letters (Theophysics Concepts)
-- `\chi` → the Logos Field
-- `\psi` → the Soul Function
-- `\phi` → the Divine Proportion
-- `\theta` → the Angle of Faith
-- `\alpha` → the Beginning Constant
-- `\omega` → the End Constant
-- `\lambda` → the Wavelength of Grace
-- `\sigma` → the Standard Deviation of Faith
+### 🎯 Smart Context-Aware Translation
+Three-layer translation system:
+1. **Full Equation Overrides** - Context-aware translations for complete equations
+2. **Math Structure Grammar** - Handles fractions, integrals, derivatives
+3. **Symbol Vocabulary** - Translates individual symbols and constants
 
-### Variables
-- `G` → Grace
-- `K` → Knowledge
-- `F` → Faith
-- `L` → Love
-- `H` → Hope
-- `W` → Wisdom
-- `S` → Spirit
-- `T` → Truth
-
-### Operators
-- `\int` → the integral
-- `\sum` → the sum
-- `\partial` → the partial derivative
-- `\nabla` → the gradient
-- `\cdot` → times
+---
 
 ## 🚀 Installation
 
-### Method 1: Manual Installation (For Development)
+### Method 1: Manual Installation
+1. Download the latest release from [Releases](https://github.com/YellowKidokc/Math-Translation-Layer/releases)
+2. Extract to your Obsidian vault's `.obsidian/plugins/theophysics-math-translator/` folder
+3. Reload Obsidian
+4. Enable the plugin in Settings → Community Plugins
 
-1. Clone this repository into your Obsidian vault's plugins folder:
-   ```bash
-   cd /path/to/your/vault/.obsidian/plugins
-   git clone https://github.com/YellowKidokc/Math-Translation-Layer.git theophysics-math-translator
-   ```
-
-2. Navigate to the plugin directory:
-   ```bash
-   cd theophysics-math-translator
-   ```
-
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-4. Build the plugin:
-   ```bash
-   npm run build
-   ```
-
-5. Enable the plugin in Obsidian:
-   - Open Settings → Community Plugins
-   - Disable Safe Mode (if enabled)
-   - Find "Theophysics Math Translation Layer" in your installed plugins
-   - Toggle it on
-
-### Method 2: Development Mode
-
-For active development:
+### Method 2: Build from Source
 ```bash
-npm run dev
+# Clone the repository
+git clone https://github.com/YellowKidokc/Math-Translation-Layer.git
+cd Math-Translation-Layer
+
+# Install dependencies
+npm install
+
+# Build the plugin
+npm run build
+
+# Copy to your Obsidian vault
+cp main.js manifest.json styles.css /path/to/vault/.obsidian/plugins/theophysics-math-translator/
 ```
 
-This will watch for changes and rebuild automatically.
+---
 
-## 📝 Usage
+## 📖 Usage Guide
 
-### Command Palette Commands
+### Quick Translation
+1. **Highlight** any LaTeX equation in your note
+2. **Right-click** → select "Translate to Narrative"
+3. Or use **Command Palette** (Ctrl/Cmd+P) → "Translate Math to Narrative"
+4. View the translation in a beautiful modal window
 
-Access these commands via `Ctrl/Cmd + P`:
+### Scan & Export Workflow
+1. Go to **Settings** → Theophysics Math Translator
+2. Set your **Scan Folder** (e.g., `Papers` or `Research/Theophysics`)
+3. Use **Command Palette** → "Scan Folder for All Math"
+4. Click **"Export Dictionary"** to save all translations to a master document
+5. Re-scan anytime to update the dictionary
 
-1. **Translate Math to Narrative**
-   - Select a mathematical equation in your note
-   - Run this command to see the translation in a modal
+### Context Menu Integration
+- The plugin automatically detects LaTeX in your selection
+- Right-click on any equation to see the "Translate to Narrative" option
+- Works with both inline `$math$` and block `$$math$$` equations
 
-2. **Scan Current File for Math**
-   - Scans the active file for all mathematical expressions
-   - Shows all found equations with their translations
+---
 
-3. **Scan Folder for All Math**
-   - Opens a folder selector
-   - Recursively scans all markdown files in the selected folder
-   - Displays comprehensive results
+## 🧪 Translation Examples
 
-4. **Export Translation Dictionary**
-   - Exports the last scan results as a markdown file
-   - Creates a timestamped dictionary file in your vault
-   - Includes both unique translations and file-by-file breakdown
+| Math Layer | Narrative Layer |
+|------------|----------------|
+| `$\chi = \int (G \cdot K) d\Omega$` | "The Logos Field equals the integral of Grace times Knowledge over all creation" |
+| `$FQ \ge \Theta_c$` | "Faith intensity times Quantum Potential must exceed the Actualization Threshold" |
+| `$\frac{A}{B}$` | "the ratio of A to B" |
+| `$\nabla^2 \Psi$` | "the curvature of the Field" |
 
-5. **Rescan and Update Dictionary**
-   - Scans your entire vault
-   - Automatically exports an updated dictionary
+---
 
-### Right-Click Context Menu
+## ⚙️ Configuration
 
-1. Select any text containing LaTeX (must include `$` or `\`)
-2. Right-click on the selection
-3. Choose "Translate to Narrative"
-4. View the translation in a modal
+### Settings
 
-### Ribbon Icon
+**Scan Folder**
+- Path to recursively scan for equations
+- Example: `Papers`, `Research/Theophysics`, `Notes/Math`
 
-Click the calculator icon in the left ribbon for quick access instructions.
+**Translation Dictionary Path**
+- Where to save the auto-generated master document
+- Default: `Theophysics Translations/Math Dictionary.md`
 
-## 🎨 Supported LaTeX Patterns
+**Auto-scan on startup**
+- Automatically scan your folder when Obsidian opens
+- Useful for keeping your dictionary up-to-date
 
-The translator recognizes:
+---
 
-- **Inline math**: `$equation$`
-- **Display math**: `$$equation$$`
-- **Integrals**: `\int f(x) dx`, `\int_a^b f(x) dx`
-- **Sums**: `\sum_{i=1}^n x_i`
-- **Fractions**: `\frac{numerator}{denominator}`
-- **Square roots**: `\sqrt{x}`, `\sqrt[n]{x}`
-- **Powers**: `x^2`, `x^{n+1}`
-- **Greek letters**: All standard Greek symbols
-- **Operators**: Standard mathematical operators
-- **Functions**: `\sin`, `\cos`, `\tan`, `\log`, `\exp`, etc.
+## 🏗️ Architecture
 
-## 🔧 Customization
+### File Structure
+```
+Math-Translation-Layer/
+├── main.ts                          # Main plugin logic, commands, UI
+├── theophysics-math-translator.ts   # Translation engine (Rosetta Stone)
+├── styles.css                       # UI styling
+├── manifest.json                    # Plugin metadata
+├── package.json                     # Dependencies
+└── tsconfig.json                    # TypeScript config
+```
 
-### Adding Custom Translations
+### Translation Engine (`theophysics-math-translator.ts`)
+
+Three-layer translation system:
+
+**Layer 1: Full Equation Overrides**
+- Matches complete equations for context-aware translation
+- Highest priority - ensures theological accuracy
+
+**Layer 2: Math Structure Grammar**
+- Handles LaTeX syntax: `\frac{}{}`, `\int`, `\sqrt{}`
+- Preserves mathematical relationships
+
+**Layer 3: Symbol Vocabulary**
+- Individual symbol mappings
+- Core Theophysics variables: χ (Logos), Ψ_S (Soul Field), etc.
+
+---
+
+## 🛠️ Development
+
+### Setup
+```bash
+npm install
+npm run dev    # Development build with watch mode
+npm run build  # Production build
+```
+
+### Adding New Translations
 
 Edit `theophysics-math-translator.ts`:
 
 ```typescript
-private static symbolMap: Record<string, string> = {
-    '\\chi': 'your custom translation',
-    // Add more symbols...
-};
+// Add to EQUATION_MAP for full equations
+"pattern": "translation"
 
-private static variableMap: Record<string, string> = {
-    'G': 'your custom variable meaning',
-    // Add more variables...
-};
-```
+// Add to STRUCTURE_MAP for LaTeX structures
+"\\\\command": "narrative"
 
-### Adding Custom Patterns
-
-Add special pattern matching in the `translateSpecialPatterns` method:
-
-```typescript
-// Your custom pattern
-if (/your-regex-pattern/.test(expr)) {
-    return "Your custom translation";
-}
-```
-
-## 📂 Project Structure
-
-```
-theophysics-math-translator/
-├── main.ts                          # Main plugin file
-├── theophysics-math-translator.ts   # Translation engine
-├── modals.ts                        # UI components
-├── manifest.json                    # Plugin metadata
-├── package.json                     # Dependencies
-├── tsconfig.json                    # TypeScript config
-├── esbuild.config.mjs              # Build configuration
-├── version-bump.mjs                # Version management
-└── README.md                       # Documentation
-```
-
-## 🧪 Development
-
-### Building
-
-```bash
-# Production build
-npm run build
-
-# Development mode (watch)
-npm run dev
+// Add to SYMBOL_MAP for individual symbols
+"\\\\symbol": "meaning"
 ```
 
 ### Testing
-
-1. Make changes to the source files
-2. The plugin will auto-rebuild (if using `npm run dev`)
-3. Reload Obsidian or run "Reload app without saving" command
-4. Test your changes
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### Adding New Translations
-
-To contribute new symbol or variable translations:
-
-1. Add entries to `symbolMap` or `variableMap` in `theophysics-math-translator.ts`
-2. Follow the existing naming conventions
-3. Test with example equations
-4. Submit a PR with examples
-
-## 📋 Roadmap
-
-- [ ] Settings page for custom symbol mappings
-- [ ] Support for more complex LaTeX expressions
-- [ ] Custom translation templates
-- [ ] Integration with templater plugin
-- [ ] Export to different formats (PDF, HTML)
-- [ ] Multi-language support for narratives
-- [ ] Interactive translation editor
-- [ ] Statistics and analytics dashboard
-
-## 🐛 Known Issues
-
-- Very complex nested LaTeX expressions may not translate perfectly
-- Some advanced LaTeX packages are not yet supported
-- Inline comments in equations are not preserved
-
-## 📜 License
-
-MIT License - see LICENSE file for details
-
-## 👤 Author
-
-**YellowKidokc**
-
-- GitHub: [@YellowKidokc](https://github.com/YellowKidokc)
-- Repository: [Math-Translation-Layer](https://github.com/YellowKidokc/Math-Translation-Layer)
-
-## 🙏 Acknowledgments
-
-- Built for the Obsidian community
-- Inspired by the intersection of mathematics, physics, and theology
-- Thanks to all contributors and testers
-
-## 📞 Support
-
-- Report bugs: [GitHub Issues](https://github.com/YellowKidokc/Math-Translation-Layer/issues)
-- Feature requests: Open an issue with the "enhancement" label
-- Questions: Start a discussion in the repository
+1. Build the plugin: `npm run build`
+2. Copy `main.js`, `manifest.json`, `styles.css` to your test vault
+3. Reload Obsidian
+4. Test with sample equations
 
 ---
 
-**Made with ❤️ for the Theophysics community**
+## 📚 Use Cases
+
+### For Researchers
+- Translate complex equations in real-time
+- Build a searchable narrative glossary
+- Bridge mathematical formalism and conceptual understanding
+
+### For Students
+- Understand physics equations in plain language
+- Study Theophysics papers with narrative translations
+- Create study guides with both layers
+
+### For Writers
+- Explain technical concepts to general audiences
+- Generate human-readable equation descriptions
+- Maintain consistency in terminology
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! To add new translations:
+
+1. Fork the repository
+2. Add translations to `theophysics-math-translator.ts`
+3. Test with real equations from Theophysics papers
+4. Submit a Pull Request
+
+### Translation Guidelines
+- Prioritize theological accuracy over literal translation
+- Use "the" for field quantities (e.g., "the Logos Field")
+- Capitalize Theophysics-specific terms (Grace, Knowledge, Soul Field)
+- Test with context from actual papers
+
+---
+
+## 📜 License
+
+MIT License - See LICENSE file for details
+
+---
+
+## 🙏 Acknowledgments
+
+Built for the Theophysics Research Project - exploring the intersection of quantum mechanics, consciousness, and theology through rigorous mathematical formalism.
+
+**"In the beginning was the Logos, and the Logos was with God, and the Logos was God."**
+*John 1:1, translated through mathematics*
+
+---
+
+## 🔗 Links
+
+- [Theophysics Papers](https://github.com/YellowKidokc/theophysics-papers)
+- [Report Issues](https://github.com/YellowKidokc/Math-Translation-Layer/issues)
+- [Obsidian Plugin Documentation](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin)
