@@ -1,5 +1,10 @@
 import { App, Modal, Notice, TFolder } from 'obsidian';
-import { TranslationResult } from './theophysics-math-translator';
+
+interface TranslationResult {
+    original: string;
+    translation: string;
+    position: number;
+}
 
 /**
  * Modal for displaying a single translation
@@ -86,7 +91,7 @@ export class ScanResultsModal extends Modal {
             originalCode.style.marginBottom = '8px';
 
             resultItem.createEl('p', {
-                text: `Translation: ${result.translated}`,
+                text: `Translation: ${result.translation}`,
                 cls: 'translation-text'
             });
 
@@ -96,7 +101,7 @@ export class ScanResultsModal extends Modal {
                 cls: 'copy-translation-btn'
             });
             copyBtn.addEventListener('click', () => {
-                navigator.clipboard.writeText(result.translated);
+                navigator.clipboard.writeText(result.translation);
                 new Notice('Translation copied!');
             });
 
@@ -232,7 +237,7 @@ export class FolderScanResultsModal extends Modal {
                 resultItem.createEl('code', { text: result.original });
                 resultItem.createEl('br');
                 resultItem.createEl('span', {
-                    text: `→ ${result.translated}`,
+                    text: `→ ${result.translation}`,
                     cls: 'translation-preview'
                 });
             });

@@ -2,15 +2,15 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Set
 import { MathTranslator } from './theophysics-math-translator';
 
 interface TheophysicsSettings {
-    scanFolder: string;
+    scanFolders: string[];  // Multiple folders to scan
     autoScan: boolean;
     translationNotePath: string;
 }
 
 const DEFAULT_SETTINGS: TheophysicsSettings = {
-    scanFolder: '',
+    scanFolders: ['_Term_Pages', 'data analytic', 'complete logos final papers'],
     autoScan: false,
-    translationNotePath: 'Theophysics Translations/Math Dictionary.md'
+    translationNotePath: 'data analytic/AA Math Translation Hub.md'
 }
 
 export default class TheophysicsMathPlugin extends Plugin {
@@ -62,25 +62,25 @@ export default class TheophysicsMathPlugin extends Plugin {
             }
         });
 
-        // 3. Command: Scan Folder Recursively
+        // 3. Command: Scan Multiple Folders
         this.addCommand({
             id: 'theophysics-scan-folder',
-            name: 'Scan Folder for All Math',
+            name: 'Scan All Folders for Math',
             callback: async () => {
-                if (!this.settings.scanFolder) {
-                    new Notice("Please set a scan folder in settings first");
+                if (!this.settings.scanFolders || this.settings.scanFolders.length === 0) {
+                    new Notice("Please set scan folders in settings first");
                     this.openSettings();
                     return;
                 }
 
-                await this.scanFolderRecursively();
+                await this.scanMultipleFolders();
             }
         });
 
-        // 4. Command: Export Translation Dictionary
+        // 4. Command: Build AA Hub
         this.addCommand({
             id: 'theophysics-export-dictionary',
-            name: 'Export Translation Dictionary',
+            name: 'Build AA Math Translation Hub',
             callback: async () => {
                 await this.exportTranslationDictionary();
             }
@@ -108,36 +108,46 @@ export default class TheophysicsMathPlugin extends Plugin {
         this.addSettingTab(new TheophysicsSettingTab(this.app, this));
     }
 
-    async scanFolderRecursively() {
-        const folder = this.app.vault.getAbstractFileByPath(this.settings.scanFolder);
-
-        if (!folder || !(folder instanceof TFolder)) {
-            new Notice("Folder not found: " + this.settings.scanFolder);
-            return;
-        }
-
-        new Notice("Scanning folder...");
+    async scanMultipleFolders() {
+        new Notice("Scanning multiple folders...");
 
         const allTranslations: Array<{file: string, math: string, narrative: string}> = [];
-        const files = this.getMarkdownFilesRecursive(folder);
+        let totalFiles = 0;
+        const foldersScanned: string[] = [];
 
-        for (const file of files) {
-            const content = await this.app.vault.read(file);
-            const translations = MathTranslator.translateDocument(content);
+        // Scan each folder in the list
+        for (const folderPath of this.settings.scanFolders) {
+            const folder = this.app.vault.getAbstractFileByPath(folderPath);
 
-            for (const trans of translations) {
-                allTranslations.push({
-                    file: file.path,
-                    math: trans.original,
-                    narrative: trans.translation
-                });
+            if (!folder || !(folder instanceof TFolder)) {
+                new Notice(`⚠️ Folder not found: ${folderPath} (skipping)`);
+                continue;
+            }
+
+            foldersScanned.push(folderPath);
+            const files = this.getMarkdownFilesRecursive(folder);
+            totalFiles += files.length;
+
+            for (const file of files) {
+                const content = await this.app.vault.read(file);
+                const translations = MathTranslator.translateDocument(content);
+
+                for (const trans of translations) {
+                    allTranslations.push({
+                        file: file.path,
+                        math: trans.original,
+                        narrative: trans.translation
+                    });
+                }
             }
         }
 
         if (allTranslations.length === 0) {
-            new Notice("No math equations found in folder");
+            new Notice(`No math equations found in ${foldersScanned.length} folder(s)`);
             return;
         }
+
+        new Notice(`✅ Found ${allTranslations.length} equations in ${totalFiles} files across ${foldersScanned.length} folders!`);
 
         // Show results and offer to save
         new FolderScanModal(this.app, allTranslations, this).open();
@@ -158,35 +168,59 @@ export default class TheophysicsMathPlugin extends Plugin {
     }
 
     async exportTranslationDictionary() {
-        const folder = this.app.vault.getAbstractFileByPath(this.settings.scanFolder);
-
-        if (!folder || !(folder instanceof TFolder)) {
-            new Notice("Please set a valid scan folder in settings");
-            return;
-        }
-
-        new Notice("Building translation dictionary...");
+        new Notice("Building AA Math Translation Hub...");
 
         const allTranslations: Array<{file: string, math: string, narrative: string}> = [];
-        const files = this.getMarkdownFilesRecursive(folder);
+        let totalFiles = 0;
+        const foldersScanned: string[] = [];
 
-        for (const file of files) {
-            const content = await this.app.vault.read(file);
-            const translations = MathTranslator.translateDocument(content);
+        // Scan all configured folders
+        for (const folderPath of this.settings.scanFolders) {
+            const folder = this.app.vault.getAbstractFileByPath(folderPath);
 
-            for (const trans of translations) {
-                allTranslations.push({
-                    file: file.path,
-                    math: trans.original,
-                    narrative: trans.translation
-                });
+            if (!folder || !(folder instanceof TFolder)) {
+                console.log(`Folder not found: ${folderPath} (skipping)`);
+                continue;
+            }
+
+            foldersScanned.push(folderPath);
+            const files = this.getMarkdownFilesRecursive(folder);
+            totalFiles += files.length;
+
+            for (const file of files) {
+                const content = await this.app.vault.read(file);
+                const translations = MathTranslator.translateDocument(content);
+
+                for (const trans of translations) {
+                    allTranslations.push({
+                        file: file.path,
+                        math: trans.original,
+                        narrative: trans.translation
+                    });
+                }
             }
         }
 
-        // Create markdown content
-        let mdContent = `# Theophysics Math Translation Dictionary\n\n`;
-        mdContent += `> Auto-generated on ${new Date().toLocaleString()}\n\n`;
-        mdContent += `Total translations: ${allTranslations.length}\n\n`;
+        // Create markdown content with dashboard styling
+        let mdContent = `---\ncssclass: theophysics-hub\n---\n\n`;
+        mdContent += `# 🔮 AA Math Translation Hub\n\n`;
+        mdContent += `> **Auto-generated Translation Dashboard**\n`;
+        mdContent += `> Last updated: ${new Date().toLocaleString()}\n`;
+        mdContent += `> Scanned folders: ${foldersScanned.map(f => `\`${f}\``).join(', ')}\n\n`;
+        
+        mdContent += `## 📊 Statistics\n\n`;
+        mdContent += `- **Total Equations Found:** ${allTranslations.length}\n`;
+        mdContent += `- **Files Scanned:** ${totalFiles}\n`;
+        mdContent += `- **Folders Scanned:** ${foldersScanned.length}\n`;
+        mdContent += `- **Unique Translations:** ${new Set(allTranslations.map(t => t.math)).size}\n\n`;
+        
+        mdContent += `---\n\n`;
+        mdContent += `## 📚 Quick Reference\n\n`;
+        mdContent += `**How to use this hub:**\n`;
+        mdContent += `1. Browse equations by file below\n`;
+        mdContent += `2. Click file links to jump to source\n`;
+        mdContent += `3. Copy narrative translations for your notes\n`;
+        mdContent += `4. Use right-click "Translate to Narrative" on any page for instant translation\n\n`;
         mdContent += `---\n\n`;
 
         // Group by file
@@ -202,16 +236,38 @@ export default class TheophysicsMathPlugin extends Plugin {
             });
         }
 
-        // Write grouped content
+        // Write grouped content with better formatting
+        mdContent += `## 📖 Translations by File\n\n`;
+        
         for (const [filepath, translations] of byFile) {
-            mdContent += `## ${filepath}\n\n`;
+            const filename = filepath.split('/').pop() || filepath;
+            mdContent += `### [[${filepath}|${filename}]]\n\n`;
+            mdContent += `*Found ${translations.length} equation(s)*\n\n`;
 
-            for (const trans of translations) {
-                mdContent += `### Math Layer\n\`\`\`latex\n${trans.math}\n\`\`\`\n\n`;
-                mdContent += `### Narrative Layer\n> "${trans.narrative}"\n\n`;
-                mdContent += `---\n\n`;
-            }
+            translations.forEach((trans, idx) => {
+                mdContent += `#### Equation ${idx + 1}\n\n`;
+                mdContent += `**Math Layer:**\n\`\`\`latex\n${trans.math}\n\`\`\`\n\n`;
+                mdContent += `**Narrative Layer:**\n> 💭 *"${trans.narrative}"*\n\n`;
+                
+                if (idx < translations.length - 1) {
+                    mdContent += `---\n\n`;
+                }
+            });
+            
+            mdContent += `\n\n`;
         }
+
+        // Add master glossary section
+        mdContent += `---\n\n## 🗂️ Master Glossary\n\n`;
+        mdContent += `*All unique equations in alphabetical order*\n\n`;
+        
+        const uniqueTranslations = Array.from(
+            new Map(allTranslations.map(t => [t.math, t.narrative])).entries()
+        ).sort((a, b) => a[0].localeCompare(b[0]));
+        
+        uniqueTranslations.forEach(([math, narrative]) => {
+            mdContent += `- \`${math}\` → *"${narrative}"*\n`;
+        });
 
         // Save to vault
         const outputPath = this.settings.translationNotePath;
@@ -230,7 +286,7 @@ export default class TheophysicsMathPlugin extends Plugin {
             await this.app.vault.create(outputPath, mdContent);
         }
 
-        new Notice(`Dictionary saved to ${outputPath}`);
+        new Notice(`✅ AA Math Hub created: ${allTranslations.length} equations indexed!`);
 
         // Open the file
         const file = this.app.vault.getAbstractFileByPath(outputPath);
@@ -465,21 +521,22 @@ class TheophysicsSettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: 'Theophysics Math Translator Settings' });
 
         new Setting(containerEl)
-            .setName('Scan Folder')
-            .setDesc('Folder to recursively scan for math equations (e.g., "Papers" or "Research/Theophysics")')
-            .addText(text => text
-                .setPlaceholder('Papers')
-                .setValue(this.plugin.settings.scanFolder)
+            .setName('Scan Folders')
+            .setDesc('Folders to scan for math equations (comma-separated). Default: "_Term_Pages, data analytic, complete logos final papers"')
+            .addTextArea(text => text
+                .setPlaceholder('_Term_Pages, data analytic, complete logos final papers')
+                .setValue(this.plugin.settings.scanFolders.join(', '))
                 .onChange(async (value) => {
-                    this.plugin.settings.scanFolder = value;
+                    // Split by comma and trim whitespace
+                    this.plugin.settings.scanFolders = value.split(',').map(f => f.trim()).filter(f => f.length > 0);
                     await this.plugin.saveSettings();
                 }));
 
         new Setting(containerEl)
-            .setName('Translation Dictionary Path')
-            .setDesc('Where to save the auto-generated translation dictionary')
+            .setName('AA Hub Path')
+            .setDesc('Where to save the AA Math Translation Hub dashboard')
             .addText(text => text
-                .setPlaceholder('Theophysics Translations/Math Dictionary.md')
+                .setPlaceholder('data analytic/AA Math Translation Hub.md')
                 .setValue(this.plugin.settings.translationNotePath)
                 .onChange(async (value) => {
                     this.plugin.settings.translationNotePath = value;
@@ -500,17 +557,26 @@ class TheophysicsSettingTab extends PluginSettingTab {
         containerEl.createEl('h3', { text: 'Usage Guide' });
         const guide = containerEl.createDiv();
         guide.innerHTML = `
-            <p><strong>Quick Translation:</strong></p>
+            <p><strong>🎯 Quick Translation (On Any Page):</strong></p>
             <ul>
                 <li>Highlight any equation in your note</li>
                 <li>Right-click → "Translate to Narrative"</li>
                 <li>Or use Command Palette → "Translate Math to Narrative"</li>
             </ul>
-            <p><strong>Scan & Export:</strong></p>
+            <p><strong>📊 Build AA Hub Dashboard:</strong></p>
             <ul>
-                <li>Set a scan folder above (e.g., "Papers")</li>
-                <li>Use "Scan Folder for All Math" from command palette</li>
-                <li>Export dictionary to get a master translation document</li>
+                <li>Set scan folders above (default: _Term_Pages, data analytic, complete logos final papers)</li>
+                <li>Use Command Palette → "Scan All Folders for Math"</li>
+                <li>Click "Build AA Math Translation Hub" to create the dashboard</li>
+                <li>Hub will be created at: <code>data analytic/AA Math Translation Hub.md</code></li>
+                <li>Scans ALL configured folders and aggregates results</li>
+            </ul>
+            <p><strong>💡 Pro Tips:</strong></p>
+            <ul>
+                <li>Add multiple folders separated by commas to scan them all</li>
+                <li>The hub auto-links to source files - click to jump to equations</li>
+                <li>Use the Master Glossary for quick reference</li>
+                <li>Re-run scan to update hub with new equations from all folders</li>
             </ul>
         `;
     }

@@ -8,15 +8,24 @@ An Obsidian plugin that translates LaTeX physics equations into human-readable "
 
 ## ✨ Features
 
-### 🔮 Instant Translation
+### 🔮 Instant Translation (Works on Any Page)
 - **Highlight & Translate**: Select any equation, right-click → "Translate to Narrative"
 - **Beautiful Modal**: See both Math Layer and Narrative Layer side-by-side
 - **One-Click Copy**: Copy translations to clipboard instantly
+- **Universal Access**: Works on any note in your vault
+
+### 📊 AA Math Translation Hub
+- **Multi-Folder Scanning**: Scans multiple folders (_Term_Pages, data analytic, complete logos final papers)
+- **Auto-Generated Dashboard**: Creates comprehensive hub in data analytic folder
+- **Clickable File Links**: Jump directly to source files from the hub
+- **Master Glossary**: All unique equations in one searchable location
+- **Statistics Dashboard**: See total equations, files scanned, folders covered, and unique translations
+- **Auto-Update**: Re-run scan to refresh hub with new equations from all folders
 
 ### 📚 Batch Processing
 - **Scan Current File**: Extract and translate all math in the active note
 - **Recursive Folder Scan**: Process entire folders of research papers
-- **Auto-Export Dictionary**: Generate a master translation reference document
+- **Smart Indexing**: Groups translations by file for easy navigation
 
 ### 🎯 Smart Context-Aware Translation
 Three-layer translation system:
@@ -54,18 +63,28 @@ cp main.js manifest.json styles.css /path/to/vault/.obsidian/plugins/theophysics
 
 ## 📖 Usage Guide
 
-### Quick Translation
-1. **Highlight** any LaTeX equation in your note
+### 🎯 Quick Translation (On Any Page)
+1. **Highlight** any LaTeX equation in any note
 2. **Right-click** → select "Translate to Narrative"
 3. Or use **Command Palette** (Ctrl/Cmd+P) → "Translate Math to Narrative"
 4. View the translation in a beautiful modal window
+5. **Works everywhere** - no setup needed!
 
-### Scan & Export Workflow
+### 📊 Build AA Math Translation Hub
 1. Go to **Settings** → Theophysics Math Translator
-2. Set your **Scan Folder** (e.g., `Papers` or `Research/Theophysics`)
-3. Use **Command Palette** → "Scan Folder for All Math"
-4. Click **"Export Dictionary"** to save all translations to a master document
-5. Re-scan anytime to update the dictionary
+2. Set your **Scan Folders** (default: `_Term_Pages, data analytic, complete logos final papers`)
+3. Use **Command Palette** → "Scan All Folders for Math"
+4. Click **"Build AA Math Translation Hub"** to create the dashboard
+5. Hub is created at `data analytic/AA Math Translation Hub.md`
+6. **Scans ALL configured folders** and aggregates results
+7. **Re-run anytime** to update with new equations from all folders
+
+### 💡 Using the AA Hub
+- **Browse by File**: See all equations organized by source file
+- **Click Links**: Jump directly to source files
+- **Master Glossary**: Quick reference for all unique equations
+- **Statistics**: Track total equations and coverage
+- **Copy & Paste**: Use narrative translations in your notes
 
 ### Context Menu Integration
 - The plugin automatically detects LaTeX in your selection
@@ -89,13 +108,16 @@ cp main.js manifest.json styles.css /path/to/vault/.obsidian/plugins/theophysics
 
 ### Settings
 
-**Scan Folder**
-- Path to recursively scan for equations
-- Example: `Papers`, `Research/Theophysics`, `Notes/Math`
+**Scan Folders**
+- Multiple folders to scan for equations (comma-separated)
+- Default: `_Term_Pages, data analytic, complete logos final papers`
+- Add or remove folders as needed
+- All folders are scanned and results aggregated in the hub
 
-**Translation Dictionary Path**
-- Where to save the auto-generated master document
-- Default: `Theophysics Translations/Math Dictionary.md`
+**AA Hub Path**
+- Where to save the auto-generated AA Math Translation Hub
+- Default: `data analytic/AA Math Translation Hub.md`
+- Hub includes statistics, file links, and master glossary
 
 **Auto-scan on startup**
 - Automatically scan your folder when Obsidian opens
