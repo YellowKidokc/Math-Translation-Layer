@@ -1,0 +1,131 @@
+/* Theophysics Math Translator Styles */
+
+.theophysics-translation-modal {
+    padding: 20px;
+}
+
+.theophysics-translation-modal h2 {
+    color: var(--interactive-accent);
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--interactive-accent);
+    padding-bottom: 10px;
+}
+
+.theophysics-translation-modal h3 {
+    margin-top: 15px;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.math-original {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: var(--text-normal);
+}
+
+.theophysics-narrative {
+    line-height: 1.6;
+    font-family: Georgia, serif;
+}
+
+.button-container {
+    margin-top: 20px;
+}
+
+.button-container button {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--interactive-normal);
+    color: var(--text-normal);
+    transition: all 0.2s ease;
+}
+
+.button-container button:hover {
+    background-color: var(--interactive-hover);
+    border-color: var(--interactive-accent);
+}
+
+.button-container button:active {
+    transform: scale(0.98);
+}
+
+/* Scan Results Styling */
+.scan-results-container {
+    margin: 20px 0;
+}
+
+.scan-result-item {
+    border-left: 3px solid var(--interactive-accent);
+}
+
+.scan-result-item h4 {
+    color: var(--interactive-accent);
+    margin-bottom: 10px;
+}
+
+.scan-result-item code {
+    background-color: var(--code-background);
+    padding: 8px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+/* Folder Scan Preview */
+.folder-scan-preview {
+    font-size: 0.9em;
+}
+
+.folder-scan-preview strong {
+    color: var(--interactive-accent);
+}
+
+.folder-scan-preview hr {
+    border: none;
+    border-top: 1px solid var(--background-modifier-border);
+    margin: 10px 0;
+}
+
+/* Settings Page Enhancements */
+.theophysics-settings-guide {
+    background-color: var(--background-secondary);
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.theophysics-settings-guide ul {
+    margin-left: 20px;
+}
+
+/* Modal Animations */
+.modal.theophysics-translation-modal {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .button-container {
+        flex-direction: column;
+    }
+
+    .button-container button {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+}
