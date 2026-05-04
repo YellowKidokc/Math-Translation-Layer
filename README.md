@@ -1,246 +1,117 @@
-# Theophysics Math Translation Layer
+# Math Translation Engine
 
-**The Rosetta Stone Between Mathematics and Theology**
+Standalone TypeScript math translation engine with a strict `parse -> translate -> render` pipeline, a pluggable dictionary system, a CLI proof path, and a browser overlay for site integration.
 
-An Obsidian plugin that translates LaTeX physics equations into human-readable "Theophysics Narrative" language. Turn `$\chi = \int G \cdot K$` into _"The Logos Field equals the integral of Grace times Knowledge"_.
+The Theophysics dictionary is the first bundled canon artifact. It lives at [src/dictionaries/theophysics.json](/D:/GitHub/Math-Translation-Layer/src/dictionaries/theophysics.json) and is designed to be reviewed directly against the canon sources.
 
----
+## What Ships Now
 
-## ✨ Features
+- Pure TypeScript core in [src/core](/D:/GitHub/Math-Translation-Layer/src/core)
+- Theophysics canon dictionary in [src/dictionaries](/D:/GitHub/Math-Translation-Layer/src/dictionaries)
+- CLI in [src/cli/index.ts](/D:/GitHub/Math-Translation-Layer/src/cli/index.ts)
+- Browser overlay in [src/browser/overlay.ts](/D:/GitHub/Math-Translation-Layer/src/browser/overlay.ts)
+- Legacy compatibility shim in [theophysics-math-translator.ts](/D:/GitHub/Math-Translation-Layer/theophysics-math-translator.ts)
 
-### 🔮 Instant Translation (Works on Any Page)
-- **Highlight & Translate**: Select any equation, right-click → "Translate to Narrative"
-- **Beautiful Modal**: See both Math Layer and Narrative Layer side-by-side
-- **One-Click Copy**: Copy translations to clipboard instantly
-- **Universal Access**: Works on any note in your vault
+## Architecture
 
-### 📊 AA Math Translation Hub
-- **Multi-Folder Scanning**: Scans multiple folders (_Term_Pages, data analytic, complete logos final papers)
-- **Auto-Generated Dashboard**: Creates comprehensive hub in data analytic folder
-- **Clickable File Links**: Jump directly to source files from the hub
-- **Master Glossary**: All unique equations in one searchable location
-- **Statistics Dashboard**: See total equations, files scanned, folders covered, and unique translations
-- **Auto-Update**: Re-run scan to refresh hub with new equations from all folders
+```text
+src/
+├── api/            future thin wrapper only
+├── browser/        browser overlay integration
+├── cli/            standalone command-line interface
+├── core/           parser, translator, renderer, extractors, types
+├── dictionaries/   machine-readable dictionaries + hooks
+└── renderers/      output adapters
+```
 
-### 📚 Batch Processing
-- **Scan Current File**: Extract and translate all math in the active note
-- **Recursive Folder Scan**: Process entire folders of research papers
-- **Smart Indexing**: Groups translations by file for easy navigation
+Core public API:
 
-### 🎯 Smart Context-Aware Translation
-Three-layer translation system:
-1. **Full Equation Overrides** - Context-aware translations for complete equations
-2. **Math Structure Grammar** - Handles fractions, integrals, derivatives
-3. **Symbol Vocabulary** - Translates individual symbols and constants
+- `parseMath(input, { format })`
+- `translateMath(ast, { dictionary, mode })`
+- `renderMath(translated, { renderer })`
+- `translate({ input, format, dictionary, mode, renderer })`
 
----
+## Theophysics Canon Rules
 
-## 🚀 Installation
+- Factor order is `G · M · E · S_eff · T · K · R · Q · F · C`
+- Raw `S_prod` does not multiply `χ` directly
+- `C` is the factor
+- `χ` is the output
 
-### Method 1: Manual Installation
-1. Download the latest release from [Releases](https://github.com/YellowKidokc/Math-Translation-Layer/releases)
-2. Extract to your Obsidian vault's `.obsidian/plugins/theophysics-math-translator/` folder
-3. Reload Obsidian
-4. Enable the plugin in Settings → Community Plugins
+These are encoded in the dictionary metadata and hooks, then enforced by tests.
 
-### Method 2: Build from Source
+## CLI
+
+Build first:
+
 ```bash
-# Clone the repository
-git clone https://github.com/YellowKidokc/Math-Translation-Layer.git
-cd Math-Translation-Layer
-
-# Install dependencies
 npm install
-
-# Build the plugin
 npm run build
-
-# Copy to your Obsidian vault
-cp main.js manifest.json styles.css /path/to/vault/.obsidian/plugins/theophysics-math-translator/
 ```
 
----
+Translate inline input:
 
-## 📖 Usage Guide
-
-### 🎯 Quick Translation (On Any Page)
-1. **Highlight** any LaTeX equation in any note
-2. **Right-click** → select "Translate to Narrative"
-3. Or use **Command Palette** (Ctrl/Cmd+P) → "Translate Math to Narrative"
-4. View the translation in a beautiful modal window
-5. **Works everywhere** - no setup needed!
-
-### 📊 Build AA Math Translation Hub
-1. Go to **Settings** → Theophysics Math Translator
-2. Set your **Scan Folders** (default: `_Term_Pages, data analytic, complete logos final papers`)
-3. Use **Command Palette** → "Scan All Folders for Math"
-4. Click **"Build AA Math Translation Hub"** to create the dashboard
-5. Hub is created at `data analytic/AA Math Translation Hub.md`
-6. **Scans ALL configured folders** and aggregates results
-7. **Re-run anytime** to update with new equations from all folders
-
-### 💡 Using the AA Hub
-- **Browse by File**: See all equations organized by source file
-- **Click Links**: Jump directly to source files
-- **Master Glossary**: Quick reference for all unique equations
-- **Statistics**: Track total equations and coverage
-- **Copy & Paste**: Use narrative translations in your notes
-
-### Context Menu Integration
-- The plugin automatically detects LaTeX in your selection
-- Right-click on any equation to see the "Translate to Narrative" option
-- Works with both inline `$math$` and block `$$math$$` equations
-
----
-
-## 🧪 Translation Examples
-
-| Math Layer | Narrative Layer |
-|------------|----------------|
-| `$\chi = \int (G \cdot K) d\Omega$` | "The Logos Field equals the integral of Grace times Knowledge over all creation" |
-| `$FQ \ge \Theta_c$` | "Faith intensity times Quantum Potential must exceed the Actualization Threshold" |
-| `$\frac{A}{B}$` | "the ratio of A to B" |
-| `$\nabla^2 \Psi$` | "the curvature of the Field" |
-
----
-
-## ⚙️ Configuration
-
-### Settings
-
-**Scan Folders**
-- Multiple folders to scan for equations (comma-separated)
-- Default: `_Term_Pages, data analytic, complete logos final papers`
-- Add or remove folders as needed
-- All folders are scanned and results aggregated in the hub
-
-**AA Hub Path**
-- Where to save the auto-generated AA Math Translation Hub
-- Default: `data analytic/AA Math Translation Hub.md`
-- Hub includes statistics, file links, and master glossary
-
-**Auto-scan on startup**
-- Automatically scan your folder when Obsidian opens
-- Useful for keeping your dictionary up-to-date
-
----
-
-## 🏗️ Architecture
-
-### File Structure
-```
-Math-Translation-Layer/
-├── main.ts                          # Main plugin logic, commands, UI
-├── theophysics-math-translator.ts   # Translation engine (Rosetta Stone)
-├── styles.css                       # UI styling
-├── manifest.json                    # Plugin metadata
-├── package.json                     # Dependencies
-└── tsconfig.json                    # TypeScript config
-```
-
-### Translation Engine (`theophysics-math-translator.ts`)
-
-Three-layer translation system:
-
-**Layer 1: Full Equation Overrides**
-- Matches complete equations for context-aware translation
-- Highest priority - ensures theological accuracy
-
-**Layer 2: Math Structure Grammar**
-- Handles LaTeX syntax: `\frac{}{}`, `\int`, `\sqrt{}`
-- Preserves mathematical relationships
-
-**Layer 3: Symbol Vocabulary**
-- Individual symbol mappings
-- Core Theophysics variables: χ (Logos), Ψ_S (Soul Field), etc.
-
----
-
-## 🛠️ Development
-
-### Setup
 ```bash
-npm install
-npm run dev    # Development build with watch mode
-npm run build  # Production build
+node dist/src/cli/index.js translate --input "\\chi = G \\cdot M \\cdot E \\cdot S \\cdot T \\cdot K \\cdot R \\cdot Q \\cdot F \\cdot C" --renderer latex-structural
 ```
 
-### Adding New Translations
+Translate a file:
 
-Edit `theophysics-math-translator.ts`:
-
-```typescript
-// Add to EQUATION_MAP for full equations
-"pattern": "translation"
-
-// Add to STRUCTURE_MAP for LaTeX structures
-"\\\\command": "narrative"
-
-// Add to SYMBOL_MAP for individual symbols
-"\\\\symbol": "meaning"
+```bash
+node dist/src/cli/index.js translate --file article.html --mode structural --renderer html-mathjax --output translated.txt
 ```
 
-### Testing
-1. Build the plugin: `npm run build`
-2. Copy `main.js`, `manifest.json`, `styles.css` to your test vault
-3. Reload Obsidian
-4. Test with sample equations
+Scan a folder:
 
----
+```bash
+node dist/src/cli/index.js scan --path "\\\\192.168.1.177\\Desktop\\faiththru Physics\\faiththruphysics.com-deploy-cannotical" --report text
+```
 
-## 📚 Use Cases
+Inspect bundled dictionaries:
 
-### For Researchers
-- Translate complex equations in real-time
-- Build a searchable narrative glossary
-- Bridge mathematical formalism and conceptual understanding
+```bash
+node dist/src/cli/index.js dictionary list
+node dist/src/cli/index.js dictionary inspect --dictionary theophysics
+```
 
-### For Students
-- Understand physics equations in plain language
-- Study Theophysics papers with narrative translations
-- Create study guides with both layers
+## Browser Overlay
 
-### For Writers
-- Explain technical concepts to general audiences
-- Generate human-readable equation descriptions
-- Maintain consistency in terminology
+`npm run build` emits:
 
----
+- `dist/browser/math-translation-overlay.js`
 
-## 🤝 Contributing
+Include it on a page with MathJax-backed or raw TeX blocks:
 
-Contributions welcome! To add new translations:
+```html
+<script src="/path/to/math-translation-overlay.js"></script>
+```
 
-1. Fork the repository
-2. Add translations to `theophysics-math-translator.ts`
-3. Test with real equations from Theophysics papers
-4. Submit a Pull Request
+The overlay:
 
-### Translation Guidelines
-- Prioritize theological accuracy over literal translation
-- Use "the" for field quantities (e.g., "the Logos Field")
-- Capitalize Theophysics-specific terms (Grace, Knowledge, Soul Field)
-- Test with context from actual papers
+- scans `.equation-block .math`, `.math`, MathJax-adjacent nodes, and `data-tex` blocks
+- renders translated math by default
+- adds a one-line summary
+- adds local and master toggles between translation and raw math
 
----
+## Testing
 
-## 📜 License
+```bash
+npm run typecheck
+npm test
+```
 
-MIT License - See LICENSE file for details
+The test suite covers:
 
----
+- parser structure
+- canon dictionary validation
+- master-equation alignment
+- CLI behavior
+- browser overlay behavior against a real article-shaped fixture
 
-## 🙏 Acknowledgments
+## Canonical Inputs
 
-Built for the Theophysics Research Project - exploring the intersection of quantum mechanics, consciousness, and theology through rigorous mathematical formalism.
-
-**"In the beginning was the Logos, and the Logos was with God, and the Logos was God."**
-*John 1:1, translated through mathematics*
-
----
-
-## 🔗 Links
-
-- [Theophysics Papers](https://github.com/YellowKidokc/theophysics-papers)
-- [Report Issues](https://github.com/YellowKidokc/Math-Translation-Layer/issues)
-- [Obsidian Plugin Documentation](https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin)
+- [CODEX_BRIEFING.md](/D:/GitHub/Math-Translation-Layer/CODEX_BRIEFING.md)
+- `\\192.168.1.177\Desktop\Cannon\00_READ_ME_FIRST.md`
+- `\\192.168.1.177\Desktop\Cannon\01_FORMAL_LAYER_Definition10.md`
+- `\\192.168.1.177\Desktop\Cannon\02_PHYSICAL_THEOLOGICAL_LAYER_TenFactorTable.md`
+- `\\192.168.1.177\Desktop\faiththru Physics\faiththruphysics.com-deploy-cannotical\_archive\convergence\convergence-01-why-god-drown-everybody.html`

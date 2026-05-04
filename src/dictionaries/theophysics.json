@@ -1,0 +1,650 @@
+{
+  "metadata": {
+    "id": "theophysics",
+    "name": "Theophysics Canon Dictionary",
+    "version": "2026.05.02",
+    "description": "Machine-readable canon translation layer for Theophysics equations, factors, summaries, and law-bridge mappings.",
+    "factorOrder": [
+      "G",
+      "M",
+      "E",
+      "S_eff",
+      "T",
+      "K",
+      "R",
+      "Q",
+      "F",
+      "C"
+    ],
+    "canonicalInputs": [
+      "D:\\GitHub\\Math-Translation-Layer\\CODEX_BRIEFING.md",
+      "\\\\192.168.1.177\\Desktop\\Cannon\\00_READ_ME_FIRST.md",
+      "\\\\192.168.1.177\\Desktop\\Cannon\\01_FORMAL_LAYER_Definition10.md",
+      "\\\\192.168.1.177\\Desktop\\Cannon\\02_PHYSICAL_THEOLOGICAL_LAYER_TenFactorTable.md"
+    ]
+  },
+  "aliases": [
+    {
+      "pattern": "\\\\iiint",
+      "replacement": "\\\\int"
+    },
+    {
+      "pattern": "\\\\iint",
+      "replacement": "\\\\int"
+    },
+    {
+      "pattern": "·",
+      "replacement": "\\\\cdot"
+    }
+  ],
+  "symbols": [
+    {
+      "id": "chi",
+      "pattern": "^\\\\chi$",
+      "label": "Coherence Output",
+      "spoken": "chi",
+      "canonicalName": "Integrated coherence output",
+      "spiritualReading": "Christic coherence result"
+    },
+    {
+      "id": "factor.G",
+      "pattern": "^G$",
+      "label": "Grace",
+      "spoken": "G",
+      "canonicalName": "External negentropy influx rate",
+      "spiritualReading": "Grace"
+    },
+    {
+      "id": "factor.M",
+      "pattern": "^M$",
+      "label": "Alignment",
+      "spoken": "M",
+      "canonicalName": "Alignment cosine",
+      "spiritualReading": "Moral alignment"
+    },
+    {
+      "id": "factor.E",
+      "pattern": "^E$",
+      "label": "Truth",
+      "spoken": "E",
+      "canonicalName": "Signal propagation fidelity",
+      "spiritualReading": "Truth transmission"
+    },
+    {
+      "id": "factor.S",
+      "pattern": "^S$",
+      "label": "Entropy",
+      "spoken": "S",
+      "canonicalName": "Entropy placeholder",
+      "spiritualReading": "Moral entropy"
+    },
+    {
+      "id": "factor.S_eff",
+      "pattern": "^S_eff$",
+      "label": "Effective Entropy Factor",
+      "spoken": "S effective",
+      "canonicalName": "Effective entropy factor",
+      "spiritualReading": "Entropy inverted through grace"
+    },
+    {
+      "id": "factor.S_prod",
+      "pattern": "^S_prod$",
+      "label": "Raw Entropy Production",
+      "spoken": "S prod",
+      "canonicalName": "Entropy production rate",
+      "spiritualReading": "Raw disorder accumulation"
+    },
+    {
+      "id": "factor.T",
+      "pattern": "^T$",
+      "label": "Time",
+      "spoken": "T",
+      "canonicalName": "Temporal integration parameter",
+      "spiritualReading": "Consequence over time"
+    },
+    {
+      "id": "factor.K",
+      "pattern": "^K$",
+      "label": "Logos",
+      "spoken": "K",
+      "canonicalName": "Information compression ratio",
+      "spiritualReading": "Logos"
+    },
+    {
+      "id": "factor.R",
+      "pattern": "^R$",
+      "label": "Phase Lock",
+      "spoken": "R",
+      "canonicalName": "Phase transition indicator",
+      "spiritualReading": "Conversion or consequence lock"
+    },
+    {
+      "id": "factor.Q",
+      "pattern": "^Q$",
+      "label": "Faith Potential",
+      "spoken": "Q",
+      "canonicalName": "Superposition measure",
+      "spiritualReading": "Unresolved faith-choice space"
+    },
+    {
+      "id": "factor.F",
+      "pattern": "^F$",
+      "label": "Faith Bond",
+      "spoken": "F",
+      "canonicalName": "Non-local correlation strength",
+      "spiritualReading": "Covenant bond"
+    },
+    {
+      "id": "factor.C",
+      "pattern": "^C$",
+      "label": "Christ Factor",
+      "spoken": "C",
+      "canonicalName": "Total integration measure",
+      "spiritualReading": "Christ or coherence factor"
+    },
+    {
+      "id": "moral-entropy",
+      "pattern": "^S_m$",
+      "label": "Moral Entropy",
+      "spoken": "moral entropy"
+    },
+    {
+      "id": "grace-work",
+      "pattern": "^W_grace$",
+      "label": "Grace Work",
+      "spoken": "grace work"
+    },
+    {
+      "id": "initial-grace",
+      "pattern": "^G_0$",
+      "label": "Initial Grace",
+      "spoken": "G zero"
+    },
+    {
+      "id": "grace-resistance",
+      "pattern": "^R\\(t\\)$",
+      "label": "Grace Resistance",
+      "spoken": "resistance at time t"
+    },
+    {
+      "id": "grace-receptivity",
+      "pattern": "^r\\(t'\\)$",
+      "label": "Grace Receptivity",
+      "spoken": "receptivity at time t prime"
+    },
+    {
+      "id": "moral-dissipation",
+      "pattern": "^D\\(t\\)$",
+      "label": "Moral Dissipation",
+      "spoken": "moral dissipation at time t"
+    },
+    {
+      "id": "correction-term",
+      "pattern": "^C\\(\\\\Psi,\\s*\\\\chi\\)$",
+      "label": "Christ Alignment Correction",
+      "spoken": "Christ alignment correction"
+    },
+    {
+      "id": "theta-c",
+      "pattern": "^\\\\Theta_c$",
+      "label": "Actualization Threshold",
+      "spoken": "theta c"
+    },
+    {
+      "id": "psi",
+      "pattern": "^\\\\psi$",
+      "label": "Wavefunction",
+      "spoken": "psi"
+    },
+    {
+      "id": "Psi",
+      "pattern": "^\\\\Psi$",
+      "label": "Quantum State",
+      "spoken": "capital psi"
+    },
+    {
+      "id": "Psi-soul",
+      "pattern": "^\\\\Psi_S$",
+      "label": "Soul Field",
+      "spoken": "soul field"
+    },
+    {
+      "id": "phi-love",
+      "pattern": "^\\\\Phi_L$",
+      "label": "Love Phase Function",
+      "spoken": "Phi L"
+    },
+    {
+      "id": "phi-justice",
+      "pattern": "^\\\\Phi_J$",
+      "label": "Justice Phase Function",
+      "spoken": "Phi J"
+    },
+    {
+      "id": "phi-mercy",
+      "pattern": "^\\\\Phi_M$",
+      "label": "Mercy Phase Function",
+      "spoken": "Phi M"
+    },
+    {
+      "id": "rho",
+      "pattern": "^\\\\rho$",
+      "label": "Density Matrix",
+      "spoken": "rho"
+    },
+    {
+      "id": "hbar",
+      "pattern": "^\\\\hbar$",
+      "label": "Reduced Planck Constant",
+      "spoken": "h bar"
+    },
+    {
+      "id": "lambda",
+      "pattern": "^\\\\Lambda$",
+      "label": "Cosmological Constant",
+      "spoken": "lambda"
+    },
+    {
+      "id": "ell-p",
+      "pattern": "^\\\\ell_P$",
+      "label": "Planck Length",
+      "spoken": "ell p"
+    },
+    {
+      "id": "hubble",
+      "pattern": "^H_0$",
+      "label": "Hubble Constant",
+      "spoken": "H zero"
+    },
+    {
+      "id": "k-b",
+      "pattern": "^k_B$",
+      "label": "Boltzmann Constant",
+      "spoken": "k b"
+    },
+    {
+      "id": "sigma",
+      "pattern": "^\\\\sigma$",
+      "label": "Entropy Generation",
+      "spoken": "sigma"
+    },
+    {
+      "id": "delta",
+      "pattern": "^\\\\delta$",
+      "label": "Moral Damage",
+      "spoken": "delta"
+    },
+    {
+      "id": "nu-loss",
+      "pattern": "^\\\\nu_loss$",
+      "label": "Invisible Moral Displacement",
+      "spoken": "nu loss"
+    },
+    {
+      "id": "chi-critical",
+      "pattern": "^\\\\chi_c$",
+      "label": "Critical Coherence Threshold",
+      "spoken": "chi c"
+    },
+    {
+      "id": "beta-love",
+      "pattern": "^\\\\beta_L$",
+      "label": "Love Steepness Parameter",
+      "spoken": "beta L"
+    },
+    {
+      "id": "alpha-s",
+      "pattern": "^\\\\alpha_s$",
+      "label": "Strong Coupling Constant",
+      "spoken": "alpha s"
+    },
+    {
+      "id": "alpha",
+      "pattern": "^\\\\alpha$",
+      "label": "Coupling Parameter",
+      "spoken": "alpha"
+    },
+    {
+      "id": "beta",
+      "pattern": "^\\\\beta$",
+      "label": "Grace Coupling",
+      "spoken": "beta"
+    },
+    {
+      "id": "mu-zero",
+      "pattern": "^\\\\mu_0$",
+      "label": "Vacuum Permeability",
+      "spoken": "mu zero"
+    },
+    {
+      "id": "epsilon-zero",
+      "pattern": "^\\\\epsilon_0$",
+      "label": "Vacuum Permittivity",
+      "spoken": "epsilon zero"
+    },
+    {
+      "id": "tau-d",
+      "pattern": "^\\\\tau_D$",
+      "label": "Decoherence Timescale",
+      "spoken": "tau d"
+    },
+    {
+      "id": "lagrangian",
+      "pattern": "^\\\\mathcal\\{L\\}$",
+      "label": "Lagrangian",
+      "spoken": "Lagrangian"
+    },
+    {
+      "id": "hamiltonian",
+      "pattern": "^\\\\hat\\{H\\}$",
+      "label": "Hamiltonian Operator",
+      "spoken": "Hamiltonian"
+    },
+    {
+      "id": "z-three",
+      "pattern": "^\\\\mathbb\\{Z\\}_3$",
+      "label": "Cyclic Group of Order Three",
+      "spoken": "Z three"
+    },
+    {
+      "id": "tanh",
+      "pattern": "^\\\\tanh$",
+      "label": "Sigmoid Transition",
+      "spoken": "hyperbolic tangent"
+    },
+    {
+      "id": "log-two",
+      "pattern": "^\\\\log_2$",
+      "label": "Base Two Logarithm",
+      "spoken": "log base two"
+    },
+    {
+      "id": "ln",
+      "pattern": "^\\\\ln$",
+      "label": "Natural Logarithm",
+      "spoken": "natural logarithm"
+    },
+    {
+      "id": "exp",
+      "pattern": "^\\\\exp$",
+      "label": "Exponential",
+      "spoken": "exponential"
+    }
+  ],
+  "structures": [
+    {
+      "id": "fraction",
+      "pattern": "^\\\\frac",
+      "label": "ratio",
+      "spoken": "the ratio of"
+    },
+    {
+      "id": "root",
+      "pattern": "^\\\\sqrt",
+      "label": "square root",
+      "spoken": "the square root of"
+    },
+    {
+      "id": "integral",
+      "pattern": "^\\\\int",
+      "label": "integral",
+      "spoken": "the integral of"
+    },
+    {
+      "id": "sum",
+      "pattern": "^\\\\sum",
+      "label": "sum",
+      "spoken": "the sum of"
+    },
+    {
+      "id": "product",
+      "pattern": "^\\\\prod",
+      "label": "product",
+      "spoken": "the product of"
+    },
+    {
+      "id": "derivative",
+      "pattern": "^(d|\\\\partial)",
+      "label": "derivative",
+      "spoken": "the rate of change of"
+    },
+    {
+      "id": "gradient",
+      "pattern": "^\\\\nabla$",
+      "label": "gradient",
+      "spoken": "gradient"
+    },
+    {
+      "id": "divergence",
+      "pattern": "^\\\\nabla\\\\cdot",
+      "label": "divergence",
+      "spoken": "divergence"
+    },
+    {
+      "id": "curl",
+      "pattern": "^\\\\nabla\\\\times",
+      "label": "curl",
+      "spoken": "curl"
+    }
+  ],
+  "equations": [
+    {
+      "equationId": "master-equation-local",
+      "title": "Master Equation Local Form",
+      "patterns": [
+        "\\\\chi_local\\(x,\\s*t\\)\\s*=\\s*G\\(x,\\s*t\\)\\s*\\\\cdot\\s*M\\(x,\\s*t\\)\\s*\\\\cdot\\s*E\\(x,\\s*t\\)\\s*\\\\cdot\\s*S_eff\\(x,\\s*t\\)\\s*\\\\cdot\\s*T\\(x,\\s*t\\)\\s*\\\\cdot\\s*K\\(x,\\s*t\\)\\s*\\\\cdot\\s*R\\(x,\\s*t\\)\\s*\\\\cdot\\s*Q\\(x,\\s*t\\)\\s*\\\\cdot\\s*F\\(x,\\s*t\\)\\s*\\\\cdot\\s*C\\(x,\\s*t\\)",
+        "\\\\chi\\s*=\\s*\\\\int\\s*\\(G\\s*\\\\cdot\\s*M\\s*\\\\cdot\\s*E\\s*\\\\cdot\\s*S\\s*\\\\cdot\\s*T\\s*\\\\cdot\\s*K\\s*\\\\cdot\\s*R\\s*\\\\cdot\\s*Q\\s*\\\\cdot\\s*F\\s*\\\\cdot\\s*C\\)\\s*dx\\s*dy\\s*dt",
+        "\\\\chi\\s*=\\s*\\\\int.*G\\s*\\\\cdot\\s*M\\s*\\\\cdot\\s*E\\s*\\\\cdot\\s*S\\s*\\\\cdot\\s*T\\s*\\\\cdot\\s*K\\s*\\\\cdot\\s*R\\s*\\\\cdot\\s*Q\\s*\\\\cdot\\s*F\\s*\\\\cdot\\s*C.*dt",
+        "\\\\chi\\s*=\\s*G\\s*\\\\cdot\\s*M\\s*\\\\cdot\\s*E\\s*\\\\cdot\\s*S_eff\\s*\\\\cdot\\s*T\\s*\\\\cdot\\s*K\\s*\\\\cdot\\s*R\\s*\\\\cdot\\s*Q\\s*\\\\cdot\\s*F\\s*\\\\cdot\\s*C",
+        "\\\\chi\\s*=\\s*G\\s*\\\\cdot\\s*M\\s*\\\\cdot\\s*E\\s*\\\\cdot\\s*S\\s*\\\\cdot\\s*T\\s*\\\\cdot\\s*K\\s*\\\\cdot\\s*R\\s*\\\\cdot\\s*Q\\s*\\\\cdot\\s*F\\s*\\\\cdot\\s*C"
+      ],
+      "narrative": "The local coherence output equals the product of all ten canonical factors, with entropy entering only through the effective entropy factor.",
+      "summary": "Total coherence is the product of all ten factors, and if any one collapses to zero the output collapses with it."
+    },
+    {
+      "equationId": "master-equation-total",
+      "title": "Master Equation Integral Form",
+      "patterns": [
+        "\\\\chi_total\\s*=\\s*\\\\int",
+        "\\\\chi\\s*=\\s*\\\\prod\\s*\\\\eta_i"
+      ],
+      "narrative": "The total coherence output is the integrated product of the ten canonical factors across region and time.",
+      "summary": "Global coherence is the accumulated integral of the same ten-factor product over space and time."
+    },
+    {
+      "equationId": "grace-function",
+      "title": "Grace Function",
+      "patterns": [
+        "G\\s*=\\s*G_0\\s*\\\\cdot\\s*e\\^\\{\\\\int\\s*r\\(t'\\)\\s*dt'\\}\\s*\\\\cdot\\s*\\(1\\s*-\\s*R\\(t\\)\\)"
+      ],
+      "narrative": "Grace compounds with receptivity over time and is attenuated by resistance.",
+      "summary": "Grace compounds with receptivity over time and diminishes with resistance."
+    },
+    {
+      "equationId": "moral-entropy-equation",
+      "title": "Moral Entropy Equation",
+      "patterns": [
+        "\\\\frac\\{dS_m\\}\\{dt\\}\\s*=\\s*\\\\sigma\\s*-\\s*\\\\frac\\{W_\\{grace\\}\\}\\{T\\}"
+      ],
+      "narrative": "Moral entropy rises from sin-generated disorder and only decreases when grace performs external work on the system.",
+      "summary": "Without grace, moral disorder only increases, and grace is the only term that reverses the second law in the moral domain."
+    },
+    {
+      "equationId": "yukawa-potential",
+      "title": "Yukawa Plus Confinement Potential",
+      "patterns": [
+        "V\\(r\\)\\s*=\\s*-\\\\frac\\{\\\\alpha_s\\}\\{r\\}\\s*\\+\\s*k\\s*\\\\cdot\\s*r",
+        "V\\(r\\)\\s*=\\s*-\\\\alpha_s\\s*/\\s*r\\s*\\+\\s*k\\s*r"
+      ],
+      "narrative": "Love behaves like a confining potential: attractive at short range and increasingly binding over distance.",
+      "summary": "Love binds at proximity and the bond strengthens with distance, never releasing."
+    },
+    {
+      "equationId": "shannon-capacity-soul",
+      "title": "Soul Shannon Capacity",
+      "patterns": [
+        "C_i\\s*=\\s*A_i\\s*\\\\cdot\\s*\\\\log_2\\(1\\s*\\+\\s*\\\\frac\\{T_i\\}\\{D_i\\}\\)"
+      ],
+      "narrative": "A soul's truth-carrying capacity grows with receptive bandwidth and with the ratio of truth signal to drift noise.",
+      "summary": "As sin noise approaches zero, the soul's capacity to receive truth approaches infinity."
+    },
+    {
+      "equationId": "shannon-capacity",
+      "title": "Shannon Channel Capacity",
+      "patterns": [
+        "C\\s*=\\s*B\\s*\\\\log_2\\(1\\s*\\+\\s*\\\\frac\\{S\\}\\{N\\}\\)"
+      ],
+      "narrative": "Channel capacity is set by bandwidth and signal-to-noise ratio, which the spiritual bridge interprets as truth transmission through noise.",
+      "summary": "Channel capacity rises as signal-to-noise rises."
+    },
+    {
+      "equationId": "born-rule",
+      "title": "Born Rule",
+      "patterns": [
+        "P\\s*=\\s*\\|\\\\langle\\s*\\\\phi\\s*\\|\\s*\\\\psi\\s*\\\\rangle\\|\\^2"
+      ],
+      "narrative": "Faith determines the distribution over possible outcomes by weighting which superposed possibility is realized.",
+      "summary": "Faith determines the probability distribution of which possibility becomes actual."
+    },
+    {
+      "equationId": "faith-threshold",
+      "title": "Faith Threshold",
+      "patterns": [
+        "FQ\\s*\\\\ge\\s*\\\\Theta_c"
+      ],
+      "narrative": "Possibility actualizes only when faith intensity and quantum potential jointly exceed the collapse threshold.",
+      "summary": "Faith and possibility must jointly cross threshold before actuality locks in."
+    },
+    {
+      "equationId": "moral-beta-decay",
+      "title": "Three Body Sin Decay",
+      "patterns": [
+        "\\\\psi_\\{whole\\}\\s*\\\\rightarrow\\s*\\\\psi_\\{broken\\}\\s*\\+\\s*\\\\delta\\s*\\+\\s*\\\\nu_\\{loss\\}"
+      ],
+      "narrative": "Sin is modeled as a directional three-body decay where state, damage, and hidden displacement all persist in the ledger.",
+      "summary": "Sin is a three-body process, and nothing disappears from the moral ledger."
+    },
+    {
+      "equationId": "moral-conservation",
+      "title": "Moral Conservation Equation",
+      "patterns": [
+        "\\\\frac\\{dE\\}\\{dt\\}\\s*=\\s*-\\\\alpha\\s*D\\(t\\)\\s*\\+\\s*\\\\beta\\s*C\\(\\\\Psi,\\s*\\\\chi\\)"
+      ],
+      "narrative": "Moral energy decays under dissipation unless restored by Christ-aligned corrective grace.",
+      "summary": "Without Christ-aligned correction, moral energy only decays."
+    },
+    {
+      "equationId": "einstein-field",
+      "title": "Einstein Field Equation",
+      "patterns": [
+        "G_\\{\\\\mu\\\\nu\\}\\s*\\+\\s*\\\\Lambda\\s*g_\\{\\\\mu\\\\nu\\}\\s*=\\s*\\\\frac\\{8\\\\pi\\s*G\\}\\{c\\^4\\}\\s*T_\\{\\\\mu\\\\nu\\}"
+      ],
+      "narrative": "Grace and curvature are paired through the geometry of spacetime responding to content and coupling.",
+      "summary": "Curvature responds to content, which the spiritual bridge reads as grace bending reality around moral mass."
+    },
+    {
+      "equationId": "newton-second-law",
+      "title": "Newton Second Law",
+      "patterns": [
+        "F\\s*=\\s*ma"
+      ],
+      "narrative": "Grace acts as force upon the inertia of nature, pushing motion into a new trajectory.",
+      "summary": "Force changes motion, which the bridge reads as grace acting on inertia."
+    },
+    {
+      "equationId": "faraday-law",
+      "title": "Faraday Law",
+      "patterns": [
+        "\\\\nabla\\s*\\\\times\\s*E\\s*=\\s*-\\\\frac\\{\\\\partial\\s*B\\}\\{\\\\partial\\s*t\\}"
+      ],
+      "narrative": "Changing field conditions generate revelation the way changing magnetic flux generates electric field.",
+      "summary": "Changing field conditions generate revelation."
+    },
+    {
+      "equationId": "second-law",
+      "title": "Second Law of Thermodynamics",
+      "patterns": [
+        "\\\\frac\\{dS\\}\\{dt\\}\\s*\\\\ge\\s*0"
+      ],
+      "narrative": "Closed systems accumulate entropy, which the spiritual bridge treats as moral decay without external grace.",
+      "summary": "Closed systems drift toward disorder unless acted on from outside."
+    },
+    {
+      "equationId": "minkowski-metric",
+      "title": "Minkowski Metric",
+      "patterns": [
+        "ds\\^2\\s*=\\s*-c\\^2\\s*dt\\^2\\s*\\+\\s*dx\\^2\\s*\\+\\s*dy\\^2\\s*\\+\\s*dz\\^2"
+      ],
+      "narrative": "The invariant interval stays fixed even as space and time trade off, which the bridge reads as frame-invariant truth.",
+      "summary": "Time and space trade off, but the invariant interval remains absolute."
+    },
+    {
+      "equationId": "mass-energy-equivalence",
+      "title": "Mass Energy Equivalence",
+      "patterns": [
+        "E\\s*=\\s*mc\\^2"
+      ],
+      "narrative": "Matter is concentrated energy, which the bridge reads as physical manifestation of deeper substance.",
+      "summary": "Matter is concentrated energy."
+    },
+    {
+      "equationId": "density-matrix",
+      "title": "Density Matrix",
+      "patterns": [
+        "\\\\rho\\s*=\\s*\\|\\\\psi\\\\rangle\\\\langle\\\\psi\\|"
+      ],
+      "narrative": "The density matrix retains the full state and its coherences, which the bridge pairs with Christ as the coherence that holds all things together.",
+      "summary": "The full state retains coherence information rather than just outcome probabilities."
+    },
+    {
+      "equationId": "noether-theorem",
+      "title": "Noether Theorem",
+      "patterns": [
+        "\\\\frac\\{\\\\partial\\s*\\\\mathcal\\{L\\}\\}\\{\\\\partial\\s*t\\}\\s*=\\s*0\\s*\\\\Rightarrow\\s*\\\\exists\\s*Q"
+      ],
+      "narrative": "Time-translation symmetry implies a conserved quantity, which the bridge uses to ground moral conservation.",
+      "summary": "Symmetry generates conservation."
+    },
+    {
+      "equationId": "klein-gordon-soul-field",
+      "title": "Soul Field Klein Gordon Equation",
+      "patterns": [
+        "\\(\\\\Box\\s*\\+\\s*m_S\\^2\\)\\\\Psi_S\\s*=\\s*0"
+      ],
+      "narrative": "The soul field propagates as a massive relativistic wave.",
+      "summary": "The soul field propagates as a relativistic massive field."
+    },
+    {
+      "equationId": "black-hole-entropy",
+      "title": "Black Hole Entropy",
+      "patterns": [
+        "S_\\{BH\\}\\s*=\\s*\\\\frac\\{k_B\\s*A\\}\\{4\\\\ell_P\\^2\\}"
+      ],
+      "narrative": "Entropy scales with horizon area, showing that information is written on the boundary.",
+      "summary": "Black hole entropy scales with boundary area rather than volume."
+    }
+  ],
+  "summaries": {
+    "master-equation-local": "Total coherence is the product of all ten factors, and if any one collapses to zero the output collapses with it.",
+    "master-equation-total": "Global coherence is the accumulated integral of the same ten-factor product over space and time.",
+    "grace-function": "Grace compounds with receptivity over time and diminishes with resistance.",
+    "moral-entropy-equation": "Without grace, moral disorder only increases, and grace is the only term that reverses the second law in the moral domain.",
+    "yukawa-potential": "Love binds at proximity and the bond strengthens with distance, never releasing.",
+    "shannon-capacity-soul": "As sin noise approaches zero, the soul's capacity to receive truth approaches infinity.",
+    "shannon-capacity": "Channel capacity rises as signal-to-noise rises.",
+    "born-rule": "Faith determines the probability distribution of which possibility becomes actual.",
+    "faith-threshold": "Faith and possibility must jointly cross threshold before actuality locks in.",
+    "moral-beta-decay": "Sin is a three-body process, and nothing disappears from the moral ledger.",
+    "moral-conservation": "Without Christ-aligned correction, moral energy only decays.",
+    "einstein-field": "Curvature responds to content, which the spiritual bridge reads as grace bending reality around moral mass.",
+    "newton-second-law": "Force changes motion, which the bridge reads as grace acting on inertia.",
+    "faraday-law": "Changing field conditions generate revelation.",
+    "second-law": "Closed systems drift toward disorder unless acted on from outside.",
+    "minkowski-metric": "Time and space trade off, but the invariant interval remains absolute.",
+    "mass-energy-equivalence": "Matter is concentrated energy.",
+    "density-matrix": "The full state retains coherence information rather than just outcome probabilities.",
+    "noether-theorem": "Symmetry generates conservation.",
+    "klein-gordon-soul-field": "The soul field propagates as a relativistic massive field.",
+    "black-hole-entropy": "Black hole entropy scales with boundary area rather than volume."
+  }
+}

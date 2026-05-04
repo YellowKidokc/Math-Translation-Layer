@@ -9,6 +9,8 @@ node_modules/
 # Build
 main.js
 *.js.map
+dist/
+coverage/
 
 # macOS
 .DS_Store

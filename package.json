@@ -1,24 +1,34 @@
 {
-  "name": "theophysics-math-translator",
-  "version": "1.0.0",
-  "description": "Obsidian plugin for translating LaTeX equations to Theophysics narrative language",
-  "main": "main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "version": "node version-bump.mjs && git add manifest.json versions.json"
+  "name": "math-translation-engine",
+  "version": "0.1.0",
+  "description": "Standalone TypeScript math translation engine with pluggable dictionaries, CLI tooling, and browser overlay support.",
+  "main": "dist/src/core/index.js",
+  "bin": {
+    "math-translate": "dist/src/cli/index.js"
   },
-  "keywords": [],
-  "author": "",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node esbuild.config.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "dev:test": "vitest"
+  },
+  "keywords": [
+    "math",
+    "translation",
+    "latex",
+    "mathjax",
+    "theophysics"
+  ],
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^16.11.6",
-    "@typescript-eslint/eslint-plugin": "5.29.0",
-    "@typescript-eslint/parser": "5.29.0",
-    "builtin-modules": "3.3.0",
-    "esbuild": "0.17.3",
-    "obsidian": "latest",
-    "tslib": "2.4.0",
-    "typescript": "4.7.4"
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^20.17.46",
+    "esbuild": "^0.25.4",
+    "jsdom": "^26.1.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "openai": "^4.0.0"
   }
 }

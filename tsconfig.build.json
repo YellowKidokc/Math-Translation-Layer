@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false
+  },
+  "include": [
+    "src/**/*.ts",
+    "theophysics-math-translator.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "tests",
+    "vitest.config.ts"
+  ]
+}
