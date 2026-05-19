@@ -134,7 +134,7 @@ def extract_equations(raw_html: str, soup: BeautifulSoup) -> list[dict]:
     ]
     position = 1
     for element in soup.select(",".join(selectors)):
-        tex = element.get("data-tex") or element.get_text(" ", strip=True)
+        tex = element.get("data-tex") or element.string or element.get_text(" ", strip=True)
         add(tex, position)
         position += 1
 
@@ -307,3 +307,4 @@ def main(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

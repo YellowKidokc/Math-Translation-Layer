@@ -68,7 +68,7 @@ def extract_equations(raw_html: str, soup: BeautifulSoup) -> list[str]:
         "mjx-container",
     ]
     for element in soup.select(",".join(selectors)):
-        tex = element.get("data-tex") or element.get_text(" ", strip=True)
+        tex = element.get("data-tex") or element.string or element.get_text(" ", strip=True)
         if tex:
             equations.append(tex)
 
@@ -97,6 +97,7 @@ def extract_equations(raw_html: str, soup: BeautifulSoup) -> list[str]:
 def extract_document(path: Path) -> ExtractedDocument:
     raw = read_text(path)
     soup = BeautifulSoup(raw, "lxml")
+    equations = extract_equations(raw, soup)
     for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
         tag.decompose()
 
@@ -108,7 +109,6 @@ def extract_document(path: Path) -> ExtractedDocument:
     body_text = "\n\n".join(paragraph for paragraph in paragraphs if paragraph)
     if not body_text:
         body_text = re.sub(r"\s+", " ", soup.get_text(" ", strip=True)).strip()
-    equations = extract_equations(raw, soup)
     word_count = len(re.findall(r"\b[\w'-]+\b", body_text))
     return ExtractedDocument(
         source_file=str(path),
@@ -227,3 +227,6 @@ def main(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+
