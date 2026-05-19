@@ -1,277 +1,307 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
+"""Extract figure catalogs and standalone math appendices from Theophysics HTML."""
+
 from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 import re
+import sys
 import uuid
-from dataclasses import dataclass
-from pathlib import Path
 from datetime import datetime, timezone
-from typing import Any
+from pathlib import Path
+from typing import Iterable
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT_DIR = ROOT_DIR / "workflow_output" / "extracted"
-DICTIONARY_PATH = ROOT_DIR / "src" / "dictionaries" / "theophysics.json"
+
+SUPPORTED_EXTENSIONS = {".html", ".htm"}
 MATHJAX_CDN = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 
 
-@dataclass
-class EquationRecord:
-    equationUuid: str
-    rawLatex: str
-    position: int
-    matched: bool
-    equationId: str | None = None
-    title: str | None = None
-    narrative: str | None = None
-    summary: str | None = None
-    lawMapping: str | None = None
-    flag: str | None = None
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9]+", "-", value.lower()).strip("-")
+    return slug or "untitled-paper"
 
 
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-zA-Z0-9]+", "-", text.lower()).strip("-") or "untitled-paper"
+def normalize_latex(value: str) -> str:
+    normalized = html.unescape(value or "")
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    while "\\\\" in normalized:
+        normalized = normalized.replace("\\\\", "\\")
+    normalized = normalized.replace("S_{eff}", "S_eff")
+    return normalized
 
 
-def load_dictionary() -> list[dict[str, Any]]:
-    data = json.loads(DICTIONARY_PATH.read_text(encoding="utf-8"))
-    return data.get("equations", [])
+def load_dictionary(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
-def discover_inputs(single_input: str | None, scan_dir: str | None) -> list[Path]:
-    if bool(single_input) == bool(scan_dir):
-        raise ValueError("Provide exactly one of --input or --scan")
-    if single_input:
-        p = Path(single_input)
-        if not p.is_file():
-            raise FileNotFoundError(f"Input file not found: {single_input}")
-        return [p]
-    d = Path(scan_dir or "")
-    if not d.is_dir():
-        raise FileNotFoundError(f"Scan directory not found: {scan_dir}")
-    return sorted([p for p in d.iterdir() if p.is_file() and p.suffix.lower() in {".html", ".htm"}])
+def extract_title(soup: BeautifulSoup, source: Path) -> str:
+    h1 = soup.find("h1")
+    if h1 and h1.get_text(strip=True):
+        return h1.get_text(" ", strip=True)
+    if soup.title and soup.title.get_text(strip=True):
+        return soup.title.get_text(" ", strip=True)
+    return source.stem.replace("-", " ").replace("_", " ").title()
 
 
-def _nearest_heading(el) -> str:
-    for prev in el.find_all_previous(["h1", "h2", "h3", "h4", "h5", "h6"]):
-        txt = prev.get_text(" ", strip=True)
-        if txt:
-            return txt
+def nearest_heading(element: Tag) -> str:
+    for sibling in element.find_all_previous(["h1", "h2", "h3", "h4", "h5", "h6"], limit=1):
+        text = sibling.get_text(" ", strip=True)
+        if text:
+            return text
     return ""
 
 
-def _nearest_paragraph_snippet(el) -> str:
-    p = el.find_previous("p") or el.find_next("p")
-    if not p:
-        return ""
-    text = " ".join(p.get_text(" ", strip=True).split())
-    return text[:100]
+def nearest_paragraph(element: Tag) -> str:
+    candidates = list(element.find_all_previous("p", limit=1)) + list(element.find_all_next("p", limit=1))
+    for paragraph in candidates:
+        text = re.sub(r"\s+", " ", paragraph.get_text(" ", strip=True)).strip()
+        if text:
+            return text[:100]
+    return ""
 
 
-def extract_figures(soup: BeautifulSoup, source_file: str) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    nodes = soup.find_all(["img", "figure", "svg", "picture"])
-    for idx, node in enumerate(nodes, start=1):
-        tag = node.name
-        src = ""
-        if tag == "img":
-            src = node.get("src", "")
-        elif tag == "figure":
-            img = node.find("img")
-            src = img.get("src", "") if img else ""
-        elif tag == "picture":
-            img = node.find("img")
-            src = img.get("src", "") if img else ""
-        elif tag == "svg":
-            src = "inline-svg:" + hashlib.sha256(str(node).encode("utf-8")).hexdigest()[:16]
-
-        alt_text = ""
-        if tag in {"img", "figure", "picture"}:
-            img = node if tag == "img" else node.find("img")
-            if img:
-                alt_text = (img.get("alt") or "").strip()
-        if not alt_text:
-            alt_text = "MISSING — needs description"
-
-        cap_node = node.find("figcaption") if tag == "figure" else None
-        caption = cap_node.get_text(" ", strip=True) if cap_node else ""
-
-        records.append(
-            {
-                "figureUuid": str(uuid.uuid4()),
-                "sourceFile": source_file,
-                "elementType": tag,
-                "src": src,
-                "altText": alt_text,
-                "caption": caption,
-                "surroundingContext": {
-                    "nearestHeading": _nearest_heading(node),
-                    "nearestParagraph": _nearest_paragraph_snippet(node),
-                },
-                "position": idx,
-            }
-        )
-    return records
+def figure_record(element: Tag, source_file: str, position: int) -> dict:
+    element_type = element.name
+    src = element.get("src") or ""
+    if element_type == "picture":
+        img = element.find("img")
+        if img:
+            src = img.get("src") or ""
+    inline_hash = ""
+    if element_type == "svg":
+        inline_hash = hashlib.sha256(str(element).encode("utf-8")).hexdigest()
+    figcaption = element.find("figcaption") if element_type == "figure" else None
+    img_for_alt = element.find("img") if element_type in {"figure", "picture"} else element
+    alt = ""
+    if isinstance(img_for_alt, Tag):
+        alt = img_for_alt.get("alt") or ""
+    return {
+        "figureUuid": str(uuid.uuid4()),
+        "sourceFile": source_file,
+        "elementType": element_type,
+        "src": src or (f"inline-svg-sha256:{inline_hash}" if inline_hash else ""),
+        "alt": alt if alt else "MISSING - needs description",
+        "caption": figcaption.get_text(" ", strip=True) if figcaption else "",
+        "surroundingContext": {
+            "nearestHeading": nearest_heading(element),
+            "nearestParagraph": nearest_paragraph(element),
+        },
+        "position": position,
+    }
 
 
-def _collect_equations_with_positions(soup: BeautifulSoup) -> list[tuple[str, int]]:
-    equations: list[tuple[str, int]] = []
-    idx = 0
-    for node in soup.descendants:
-        if not getattr(node, "name", None):
+def extract_figures(soup: BeautifulSoup, source_file: str) -> list[dict]:
+    figures: list[dict] = []
+    for index, element in enumerate(soup.find_all(["img", "figure", "svg", "picture"]), start=1):
+        if element.name == "img" and element.find_parent(["figure", "picture"]):
             continue
-        idx += 1
-        if node.name in {"math", "mjx-container"}:
-            txt = " ".join(node.get_text(" ", strip=True).split())
-            if txt:
-                equations.append((txt, idx))
-        elif node.name == "span" and "math" in (node.get("class") or []):
-            txt = " ".join(node.get_text(" ", strip=True).split())
-            if txt:
-                equations.append((txt, idx))
-        elif node.name == "script" and str(node.get("type", "")).startswith("math/tex"):
-            txt = " ".join(node.get_text(" ", strip=True).split())
-            if txt:
-                equations.append((txt, idx))
-
-    raw = soup.get_text("\n")
-    for m in re.finditer(r"\$\$(.+?)\$\$", raw, flags=re.DOTALL):
-        equations.append((" ".join(m.group(1).split()), 100000 + m.start()))
-    for m in re.finditer(r"\$(.+?)\$", raw, flags=re.DOTALL):
-        equations.append((" ".join(m.group(1).split()), 200000 + m.start()))
-
-    # de-dupe by latex text preserving first appearance
-    out: list[tuple[str, int]] = []
-    seen = set()
-    for latex, pos in sorted(equations, key=lambda t: t[1]):
-        if latex and latex not in seen:
-            seen.add(latex)
-            out.append((latex, pos))
-    return out
+        figures.append(figure_record(element, source_file, index))
+    return figures
 
 
-def match_equation(latex: str, dictionary_equations: list[dict[str, Any]]) -> EquationRecord:
-    for entry in dictionary_equations:
-        patterns = entry.get("patterns", [])
-        for pat in patterns:
+def extract_equations(raw_html: str, soup: BeautifulSoup) -> list[dict]:
+    equations: list[dict] = []
+    seen: set[str] = set()
+
+    def add(raw_latex: str, position: int) -> None:
+        cleaned = normalize_latex(raw_latex)
+        if cleaned and cleaned not in seen:
+            seen.add(cleaned)
+            equations.append(
+                {
+                    "equationUuid": str(uuid.uuid4()),
+                    "rawLatex": cleaned,
+                    "position": position,
+                }
+            )
+
+    selectors = [
+        ".math",
+        ".MathJax",
+        ".MathJax_Display",
+        ".equation",
+        ".equation-block",
+        "[data-tex]",
+        "script[type='math/tex']",
+        "script[type='math/tex; mode=display']",
+        "math",
+        "mjx-container",
+    ]
+    position = 1
+    for element in soup.select(",".join(selectors)):
+        tex = element.get("data-tex") or element.get_text(" ", strip=True)
+        add(tex, position)
+        position += 1
+
+    latex_patterns = [
+        r"\$\$(.+?)\$\$",
+        r"\\\[(.+?)\\\]",
+        r"\\\((.+?)\\\)",
+        r"(?<!\$)\$(?!\$)(.+?)(?<!\$)\$(?!\$)",
+    ]
+    for pattern in latex_patterns:
+        for match in re.finditer(pattern, raw_html, flags=re.DOTALL):
+            add(match.group(1), position)
+            position += 1
+    return equations
+
+
+def match_equation(raw_latex: str, dictionary: dict) -> dict:
+    latex = normalize_latex(raw_latex)
+    for entry in dictionary.get("equations", []):
+        for pattern in entry.get("patterns", []):
             try:
-                if re.search(pat, latex):
-                    return EquationRecord(
-                        equationUuid=str(uuid.uuid4()),
-                        rawLatex=latex,
-                        position=0,
-                        matched=True,
-                        equationId=entry.get("equationId"),
-                        title=entry.get("title"),
-                        narrative=entry.get("narrative"),
-                        summary=entry.get("summary"),
-                        lawMapping=entry.get("lawMapping"),
-                    )
+                if re.search(pattern, latex, flags=re.IGNORECASE):
+                    return {
+                        "matched": True,
+                        "equationId": entry.get("equationId", ""),
+                        "title": entry.get("title", ""),
+                        "narrative": entry.get("narrative", ""),
+                        "summary": entry.get("summary", ""),
+                        "lawMapping": entry.get("lawMapping", entry.get("law", "")),
+                    }
             except re.error:
                 continue
-    return EquationRecord(
-        equationUuid=str(uuid.uuid4()),
-        rawLatex=latex,
-        position=0,
-        matched=False,
-        flag="UNMATCHED — needs dictionary entry",
-    )
+    return {
+        "matched": False,
+        "equationId": "",
+        "title": "UNMATCHED - needs dictionary entry",
+        "narrative": "UNMATCHED - needs dictionary entry",
+        "summary": "UNMATCHED - needs dictionary entry",
+        "lawMapping": "",
+    }
 
 
-def extract_math_catalog(soup: BeautifulSoup, dictionary_equations: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    catalog: list[dict[str, Any]] = []
-    for latex, position in _collect_equations_with_positions(soup):
-        rec = match_equation(latex, dictionary_equations)
-        rec.position = position
-        catalog.append(rec.__dict__)
-    return catalog
+def enrich_equations(equations: list[dict], dictionary: dict, source_file: str) -> list[dict]:
+    enriched: list[dict] = []
+    for equation in equations:
+        match = match_equation(equation["rawLatex"], dictionary)
+        enriched.append({**equation, "sourceFile": source_file, **match})
+    return enriched
 
 
-def render_math_appendix(title: str, equations: list[dict[str, Any]]) -> str:
+def render_math_appendix(title: str, source_file: str, equations: list[dict]) -> str:
     toc = "\n".join(
-        f'<li><a href="#eq-{i+1}">Equation {i+1}: {e.get("title") or "Unmatched"}</a></li>' for i, e in enumerate(equations)
+        f'<li><a href="#eq-{idx}">{idx}. {html.escape(eq.get("title") or "Equation")}</a></li>'
+        for idx, eq in enumerate(equations, start=1)
     )
-    body = []
-    for i, e in enumerate(equations, start=1):
-        badge = '<span class="badge">UNMATCHED</span>' if not e.get("matched") else ""
-        law = e.get("lawMapping") or "N/A"
-        narrative = e.get("narrative") or "No translation available."
-        summary = e.get("summary") or "No summary available."
-        body.append(
-            f'''<section id="eq-{i}" class="eq-card">
-<h2>Equation {i} {badge}</h2>
-<div class="latex">\\[{e.get("rawLatex", "")}\\]</div>
-<p><strong>English translation:</strong> {narrative}</p>
-<p><strong>One-line summary:</strong> {summary}</p>
-<p><strong>Law mapping:</strong> {law}</p>
-</section>'''
+    blocks = []
+    for idx, eq in enumerate(equations, start=1):
+        badge = '<span class="badge unmatched">UNMATCHED</span>' if not eq.get("matched") else '<span class="badge matched">MATCHED</span>'
+        law = f"<p><strong>Law mapping:</strong> {html.escape(str(eq.get('lawMapping') or 'Not specified'))}</p>"
+        blocks.append(
+            f"""
+            <section class="equation-card" id="eq-{idx}">
+              <div class="card-header"><h2>{idx}. {html.escape(eq.get('title') or 'Equation')}</h2>{badge}</div>
+              <div class="math-display">\\[{html.escape(eq['rawLatex'])}\\]</div>
+              <p><strong>English translation:</strong> {html.escape(eq.get('narrative') or '')}</p>
+              <p><strong>Summary:</strong> {html.escape(eq.get('summary') or '')}</p>
+              {law}
+              <p class="meta">Equation UUID: {html.escape(eq['equationUuid'])}</p>
+            </section>
+            """
         )
-
     return f"""<!doctype html>
-<html>
+<html lang="en">
 <head>
-  <meta charset=\"utf-8\" />
-  <title>{title} - Math Appendix</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{html.escape(title)} - Math Appendix</title>
+  <script src="{MATHJAX_CDN}" async></script>
   <style>
-    body {{ background: #08080c; color: #f4f4f8; font-family: Inter, Arial, sans-serif; padding: 2rem; }}
+    body {{ background: #08080c; color: #b8bcc6; font-family: Inter, Segoe UI, sans-serif; margin: 0; padding: 32px; }}
+    main {{ max-width: 980px; margin: 0 auto; }}
+    h1, h2 {{ color: #f4f0e8; }}
     a {{ color: #e8a912; }}
-    h1, h2 {{ color: #e8a912; }}
-    .eq-card {{ border: 1px solid #2a2a33; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; background: #111118; }}
-    .badge {{ background: #7f1d1d; color: #fff; border-radius: 4px; padding: 0.1rem 0.4rem; font-size: 0.8rem; }}
-    .latex {{ font-size: 1.1rem; margin: 0.8rem 0; }}
+    .source, .meta {{ color: #7f8491; font-size: 0.9rem; }}
+    .equation-card {{ border: 1px solid rgba(232, 169, 18, 0.28); border-radius: 18px; padding: 22px; margin: 18px 0; background: rgba(255,255,255,0.035); }}
+    .card-header {{ display: flex; justify-content: space-between; gap: 16px; align-items: center; }}
+    .badge {{ border-radius: 999px; padding: 4px 10px; font-size: 0.75rem; letter-spacing: 0.08em; }}
+    .matched {{ color: #0f1b12; background: #9be28f; }}
+    .unmatched {{ color: #1e1200; background: #e8a912; }}
+    .math-display {{ color: #f4f0e8; overflow-x: auto; padding: 12px 0; }}
   </style>
-  <script>
-    window.MathJax = {{ tex: {{ inlineMath: [['$', '$'], ['\\\\(', '\\\\)']] }} }};
-  </script>
-  <script id=\"MathJax-script\" async src=\"{MATHJAX_CDN}\"></script>
 </head>
 <body>
-  <h1>{title} — Math Appendix</h1>
+<main>
+  <h1>{html.escape(title)} - Math Appendix</h1>
+  <p class="source">Source: {html.escape(source_file)}</p>
   <h2>Table of Contents</h2>
   <ol>{toc}</ol>
-  {''.join(body)}
+  {''.join(blocks)}
+</main>
 </body>
-</html>"""
+</html>
+"""
 
 
-def process_file(path: Path, output_dir: Path, dictionary_equations: list[dict[str, Any]]) -> None:
-    soup = BeautifulSoup(path.read_text(encoding="utf-8"), "lxml")
-    title_node = soup.find("title") or soup.find("h1")
-    title = title_node.get_text(strip=True) if title_node else path.stem
-    slug = slugify(path.stem)
+def collect_inputs(input_path: str | None, scan_path: str | None) -> list[Path]:
+    if not input_path and not scan_path:
+        raise SystemExit("Provide --input <file> or --scan <folder>.")
+    paths: list[Path] = []
+    if input_path:
+        path = Path(input_path).expanduser().resolve()
+        if not path.exists() or not path.is_file():
+            raise SystemExit(f"Input file not found: {path}")
+        paths.append(path)
+    if scan_path:
+        folder = Path(scan_path).expanduser().resolve()
+        if not folder.exists() or not folder.is_dir():
+            raise SystemExit(f"Scan folder not found: {folder}")
+        paths.extend(
+            sorted(path for path in folder.rglob("*") if path.suffix.lower() in SUPPORTED_EXTENSIONS)
+        )
+    return paths
 
-    figures = extract_figures(soup, str(path))
-    math_catalog = extract_math_catalog(soup, dictionary_equations)
 
-    fig_path = output_dir / f"{slug}-figures.json"
-    math_json_path = output_dir / f"{slug}-math-catalog.json"
-    appendix_path = output_dir / f"{slug}-math-appendix.html"
-
-    fig_path.write_text(json.dumps(figures, indent=2), encoding="utf-8")
-    math_json_path.write_text(json.dumps(math_catalog, indent=2), encoding="utf-8")
-    appendix_path.write_text(render_math_appendix(title, math_catalog), encoding="utf-8")
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Extract figures and math appendix from HTML papers")
-    parser.add_argument("--input", help="Single HTML file")
-    parser.add_argument("--scan", help="Directory of HTML files")
-    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="Output directory")
-    args = parser.parse_args()
-
-    output_dir = Path(args.output_dir)
+def process_file(path: Path, output_dir: Path, dictionary: dict) -> dict:
+    raw = path.read_text(encoding="utf-8", errors="replace")
+    soup = BeautifulSoup(raw, "lxml")
+    title = extract_title(soup, path)
+    slug = slugify(title)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    dictionary_equations = load_dictionary()
-    files = discover_inputs(args.input, args.scan)
-    for f in files:
-        process_file(f, output_dir, dictionary_equations)
+    figures = extract_figures(soup, str(path))
+    equations = enrich_equations(extract_equations(raw, soup), dictionary, str(path))
 
-    print(f"Processed {len(files)} file(s) into {output_dir} at {datetime.now(timezone.utc).isoformat()}")
+    figures_path = output_dir / f"{slug}-figures.json"
+    math_catalog_path = output_dir / f"{slug}-math-catalog.json"
+    appendix_path = output_dir / f"{slug}-math-appendix.html"
+
+    figures_path.write_text(json.dumps(figures, ensure_ascii=False, indent=2), encoding="utf-8")
+    math_catalog_path.write_text(json.dumps(equations, ensure_ascii=False, indent=2), encoding="utf-8")
+    appendix_path.write_text(render_math_appendix(title, str(path), equations), encoding="utf-8")
+
+    return {
+        "sourceFile": str(path),
+        "title": title,
+        "figureCount": len(figures),
+        "equationCount": len(equations),
+        "outputs": [str(figures_path), str(math_catalog_path), str(appendix_path)],
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def parse_args(argv: Iterable[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Extract figure catalogs and math appendices from HTML papers.")
+    parser.add_argument("--input", help="Single HTML file to process.")
+    parser.add_argument("--scan", help="Folder of HTML files to process recursively.")
+    parser.add_argument("--output-dir", default="workflow_output/extracted/", help="Output directory.")
+    parser.add_argument("--dictionary", default="src/dictionaries/theophysics.json", help="Theophysics dictionary JSON path.")
+    return parser.parse_args(list(argv))
+
+
+def main(argv: Iterable[str] | None = None) -> int:
+    args = parse_args(sys.argv[1:] if argv is None else argv)
+    dictionary = load_dictionary(Path(args.dictionary).resolve())
+    output_dir = Path(args.output_dir).resolve()
+    results = [process_file(path, output_dir, dictionary) for path in collect_inputs(args.input, args.scan)]
+    print(json.dumps({"processed": len(results), "documents": results}, ensure_ascii=False, indent=2))
     return 0
 
 

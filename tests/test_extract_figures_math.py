@@ -1,65 +1,86 @@
-import importlib.util
+﻿import importlib.util
+import json
+import sys
 from pathlib import Path
 
-SCRIPT_PATH = Path(__file__).resolve().parents[1] / "scripts" / "extract-figures-math.py"
-spec = importlib.util.spec_from_file_location("extract_figures_math", SCRIPT_PATH)
-extract_module = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
-spec.loader.exec_module(extract_module)
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "extract-figures-math.py"
+FIXTURE = ROOT / "tests" / "fixtures" / "sample-article.html"
+DICTIONARY = ROOT / "src" / "dictionaries" / "theophysics.json"
 
 
-def _soup_from_fixture():
-    from bs4 import BeautifulSoup
+def load_module():
+    spec = importlib.util.spec_from_file_location("extract_figures_math", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
-    fixture = Path("tests/fixtures/sample-article.html")
-    return BeautifulSoup(fixture.read_text(encoding="utf-8"), "lxml")
 
-
-def test_figure_extraction_from_fixture():
-    soup = _soup_from_fixture()
-    figures = extract_module.extract_figures(soup, "tests/fixtures/sample-article.html")
-    assert len(figures) >= 3
-    assert any(f["elementType"] == "img" for f in figures)
-    assert any(f["altText"] == "MISSING — needs description" for f in figures)
+def test_figure_extraction_from_fixture_with_images():
+    module = load_module()
+    soup = module.BeautifulSoup(FIXTURE.read_text(encoding="utf-8"), "lxml")
+    figures = module.extract_figures(soup, str(FIXTURE))
+    assert len(figures) >= 4
+    assert any(item["alt"] == "Coherence flow diagram" for item in figures)
+    assert any(item["alt"] == "MISSING - needs description" for item in figures)
+    assert any(item["caption"] == "A sample figure caption." for item in figures)
 
 
 def test_equation_extraction_finds_latex_blocks():
-    soup = _soup_from_fixture()
-    equations = extract_module._collect_equations_with_positions(soup)
-    blob = "\n".join(eq for eq, _ in equations)
-    assert "\\chi = G" in blob
-    assert "x_{n+1}" in blob
+    module = load_module()
+    raw = FIXTURE.read_text(encoding="utf-8")
+    soup = module.BeautifulSoup(raw, "lxml")
+    equations = module.extract_equations(raw, soup)
+    assert len(equations) >= 4
+    assert any("\\chi" in equation["rawLatex"] for equation in equations)
+    assert any("x_{n+1}" in equation["rawLatex"] for equation in equations)
+    assert any("E = mc^2" in equation["rawLatex"] for equation in equations)
 
 
-def test_dictionary_matching_identifies_known_equation():
-    dictionary = extract_module.load_dictionary()
-    matched = extract_module.match_equation(
-        r"\\chi = G \\cdot M \\cdot E \\cdot S \\cdot T \\cdot K \\cdot R \\cdot Q \\cdot F \\cdot C",
+def test_dictionary_matching_identifies_master_equation():
+    module = load_module()
+    dictionary = module.load_dictionary(DICTIONARY)
+    match = module.match_equation(
+        r"\chi = G \cdot M \cdot E \cdot S_eff \cdot T \cdot K \cdot R \cdot Q \cdot F \cdot C",
         dictionary,
     )
-    assert matched.matched is True
-    assert matched.equationId is not None
+    assert match["matched"] is True
+    assert match["equationId"] == "master-equation-local"
 
 
-def test_unmatched_equation_is_flagged():
-    dictionary = extract_module.load_dictionary()
-    unmatched = extract_module.match_equation(r"a^2 + b^2 = c^2 + z", dictionary)
-    assert unmatched.matched is False
-    assert unmatched.flag == "UNMATCHED — needs dictionary entry"
+def test_unmatched_equations_get_flagged():
+    module = load_module()
+    dictionary = module.load_dictionary(DICTIONARY)
+    match = module.match_equation(r"Z = mystery + 42", dictionary)
+    assert match["matched"] is False
+    assert "UNMATCHED" in match["title"]
 
 
-def test_math_appendix_contains_mathjax_cdn():
-    html = extract_module.render_math_appendix(
-        "Sample",
+def test_math_appendix_html_contains_mathjax_and_equation_blocks(tmp_path):
+    module = load_module()
+    result = module.main(
         [
-            {
-                "rawLatex": r"x+y",
-                "matched": False,
-                "narrative": None,
-                "summary": None,
-                "lawMapping": None,
-            }
-        ],
+            "--input",
+            str(FIXTURE),
+            "--output-dir",
+            str(tmp_path),
+            "--dictionary",
+            str(DICTIONARY),
+        ]
     )
-    assert "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" in html
-    assert "<!doctype html>" in html.lower()
+    assert result == 0
+    appendix = tmp_path / "sample-theophysics-article-math-appendix.html"
+    catalog = tmp_path / "sample-theophysics-article-math-catalog.json"
+    figures = tmp_path / "sample-theophysics-article-figures.json"
+    assert appendix.exists()
+    assert catalog.exists()
+    assert figures.exists()
+    html = appendix.read_text(encoding="utf-8")
+    assert module.MATHJAX_CDN in html
+    assert "equation-card" in html
+    catalog_data = json.loads(catalog.read_text(encoding="utf-8"))
+    assert any(item["matched"] for item in catalog_data)
+    assert any(not item["matched"] for item in catalog_data)
