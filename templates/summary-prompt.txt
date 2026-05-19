@@ -1,0 +1,6 @@
+You are summarizing a research paper for an 8th grader.
+Title: {{TITLE}}
+Content: {{BODY_TEXT}}
+Equations found: {{EQUATION_LIST}}
+Write ONE paragraph (3-5 sentences) explaining what this paper is about.
+Use no jargon. Use no math symbols. Explain it like you're talking to a smart 13-year-old.

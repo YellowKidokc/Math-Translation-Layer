@@ -52,6 +52,22 @@ function ensureStyles(document: Document): void {
         .mtl-card[hidden] {
             display: none;
         }
+
+        .mtl-equation-callout {
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            background: linear-gradient(180deg, rgba(212, 175, 55, 0.06), rgba(0, 0, 0, 0));
+            border-radius: 0.7rem;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+        .mtl-structure-label {
+            color: var(--text-secondary, #a0a0a0);
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
         .mtl-layer {
             border-radius: 0 0.5rem 0.5rem 0;
             padding: 1rem 1.5rem;
@@ -490,8 +506,8 @@ function renderStructureMapMarkup(source: string): string {
 
     return [
         `<div class="mtl-structure-map" aria-label="Equation structure translated symbol by symbol" data-mtl-event-id="${eventId}" data-mtl-event="structural-equation-map" data-mtl-review-priority="high" data-mtl-review='${escapeHtml(JSON.stringify(payload))}'>`,
-        `<div class="mtl-structure-row mtl-structure-word">${wordRow}</div>`,
-        `<div class="mtl-structure-row mtl-structure-math">${mathRow}</div>`,
+        `<div class="mtl-structure-label">Word structure</div><div class="mtl-structure-row mtl-structure-word">${wordRow}</div>`,
+        `<div class="mtl-structure-label">Symbol structure</div><div class="mtl-structure-row mtl-structure-math">${mathRow}</div>`,
         "</div>"
     ].join("");
 }
