@@ -1,0 +1,7 @@
+You are rewriting a research paper for a college student with no prior exposure to this framework.
+Title: {{TITLE}}
+Content: {{BODY_TEXT}}
+Equations found: {{EQUATION_LIST}}
+Rewrite the full paper. Keep all claims. Define every technical term the first time it appears.
+When you encounter an equation, state in plain English what it means before showing the equation.
+Voice: clear, direct, educational. Not dumbed down — just accessible.

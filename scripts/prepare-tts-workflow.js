@@ -5,7 +5,14 @@ const { spawnSync } = require("child_process");
 const crypto = require("crypto");
 
 const { JSDOM } = require("jsdom");
-const { extractMathBlocks, translate } = require("../dist/src/core");
+
+let cachedCore;
+function getCore() {
+    if (!cachedCore) {
+        cachedCore = require("../dist/src/core");
+    }
+    return cachedCore;
+}
 
 const SUPPORTED_INPUTS = /\.(html?|md|markdown|txt)$/i;
 const TYPE_EXTENSIONS = {
@@ -44,6 +51,7 @@ function parseArgs(argv) {
         opener: "Theophysics. David Lowe. POF 2828.",
         types: "all",
         runId: "",
+        releaseId: "",
         copySource: false,
         writeMarkdown: false,
         skipMath: false,
@@ -93,6 +101,9 @@ function parseArgs(argv) {
             i += 1;
         } else if (arg === "--run-id") {
             args.runId = next;
+            i += 1;
+        } else if (arg === "--release-id") {
+            args.releaseId = next;
             i += 1;
         } else if (arg === "--copy-source") {
             args.copySource = true;
@@ -181,6 +192,7 @@ function normalizeLatex(source) {
 }
 
 function nonOverlappingBlocks(content) {
+    const { extractMathBlocks } = getCore();
     const blocks = extractMathBlocks(content);
     const kept = [];
     let lastEnd = -1;
@@ -196,6 +208,7 @@ function nonOverlappingBlocks(content) {
 
 function translateMathBlock(block, options, stats, forceEquationCue = false) {
     try {
+        const { translate } = getCore();
         const result = translate({
             input: normalizeLatex(block.latex),
             format: "tex",
@@ -504,6 +517,7 @@ function visibleHtmlToText(html, options, stats) {
     const paperArticle = document.querySelector("section#paper article.story") || document.querySelector("main article.story");
     const paperBody = cloneWithout(paperArticle, [".gtq-bottom-audit"]);
     let bodyBlocks = appendSection(lines, paperBody, options, stats);
+    stats.extractionStrategy = bodyBlocks > 0 ? "gtq-paper-article" : "none";
 
     if (bodyBlocks === 0) {
         const fallbackRoots = [
@@ -521,6 +535,12 @@ function visibleHtmlToText(html, options, stats) {
             seen.add(root);
             bodyBlocks = appendSection(lines, root, options, stats);
             if (bodyBlocks > 0) {
+                const selectorName = root === document.body
+                    ? "body"
+                    : root.getAttribute("role") === "main"
+                        ? "role-main"
+                        : root.tagName.toLowerCase();
+                stats.extractionStrategy = `fallback-${selectorName}`;
                 break;
             }
         }
@@ -723,6 +743,7 @@ function processFile(filePath, args, dirs) {
         file: filePath,
         mathBlocks: 0,
         failedMathBlocks: 0,
+        extractionStrategy: "plain-text",
         diagnostics: [],
         translationEvents: []
     };
@@ -743,8 +764,11 @@ function processFile(filePath, args, dirs) {
         fs.writeFileSync(markdownPath, cleanMarkdown(prepared), "utf8");
     }
 
+    const releaseBuildUuid = uuidFor("mtl.release-build", [args.releaseId || "local", args.runUuid]);
+
     const logLines = [
         `Run UUID: ${args.runUuid}`,
+        `Release/Build UUID: ${releaseBuildUuid}`,
         `Document UUID: ${documentUuid}`,
         `Source SHA-256: ${sourceSha256}`,
         `Source: ${filePath}`,
@@ -752,7 +776,8 @@ function processFile(filePath, args, dirs) {
         sourcePath ? `Copied source: ${sourcePath}` : "",
         markdownPath ? `Markdown: ${markdownPath}` : "",
         `Math blocks: ${stats.mathBlocks}`,
-        `Failed math blocks: ${stats.failedMathBlocks}`
+        `Failed math blocks: ${stats.failedMathBlocks}`,
+        `Extraction strategy: ${stats.extractionStrategy}`
     ].filter(Boolean);
 
     const eventPath = uniquePath(dirs.logs, baseName, ".translation-events.json");
@@ -777,7 +802,7 @@ function processFile(filePath, args, dirs) {
     }
 
     fs.writeFileSync(logPath, logLines.join("\n") + "\n", "utf8");
-    return { ...stats, preparedPath, markdownPath, sourcePath, audioPath, logPath, eventPath };
+    return { ...stats, releaseBuildUuid, preparedPath, markdownPath, sourcePath, audioPath, logPath, eventPath };
 }
 
 function main() {
@@ -833,6 +858,7 @@ function main() {
             const result = processFile(file, args, dirs);
             summary.push({
                 runUuid: result.runUuid,
+                releaseBuildUuid: result.releaseBuildUuid,
                 documentUuid: result.documentUuid,
                 sourceSha256: result.sourceSha256,
                 file,
@@ -873,4 +899,14 @@ function main() {
     console.log(`Logs: ${dirs.logs}`);
 }
 
-main();
+if (require.main === module) {
+    main();
+}
+
+module.exports = {
+    visibleHtmlToText,
+    cleanText,
+    polishForSpeech,
+    replaceMath,
+    uuidFor
+};
