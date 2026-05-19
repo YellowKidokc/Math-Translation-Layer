@@ -12,6 +12,7 @@ main.js
 dist/
 coverage/
 workflow_output/
+pipeline/output/
 exports/*
 !exports/
 !exports/README.md

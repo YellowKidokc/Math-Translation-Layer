@@ -1,7 +1,7 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import asdict, dataclass
+from typing import Any
 
 
 @dataclass
@@ -12,7 +12,10 @@ class PaperIntake:
     format_detected: str
     intake_timestamp: str
     original_archived_path: str
-    title: Optional[str]
+    title: str | None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass
@@ -22,9 +25,12 @@ class Claim:
     claim_text: str
     source_span_start: int
     source_span_end: int
-    section_heading: Optional[str]
+    section_heading: str | None
     paragraph_index: int
-    claim_type: Optional[str]
+    claim_type: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass
@@ -33,6 +39,14 @@ class ClaimSet:
     claims: list[Claim]
     extraction_timestamp: str
     extractor_version: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "paper_uuid": self.paper_uuid,
+            "claims": [claim.to_dict() for claim in self.claims],
+            "extraction_timestamp": self.extraction_timestamp,
+            "extractor_version": self.extractor_version,
+        }
 
 
 @dataclass
@@ -43,8 +57,11 @@ class RunManifest:
     station_outputs: dict[str, str]
     source_hash: str
     run_start: str
-    run_end: Optional[str]
+    run_end: str | None
     all_output_hashes: dict[str, str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass
@@ -56,12 +73,22 @@ class EvidenceRow:
     strength: str
     source: str
 
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
 
 @dataclass
 class EvidenceLedger:
     paper_uuid: str
     rows: list[EvidenceRow]
     timestamp: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "paper_uuid": self.paper_uuid,
+            "rows": [row.to_dict() for row in self.rows],
+            "timestamp": self.timestamp,
+        }
 
 
 @dataclass
@@ -75,6 +102,9 @@ class SevenQForward:
     consequence: str
     falsifiability: str
 
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
 
 @dataclass
 class SevenQReverse:
@@ -82,6 +112,9 @@ class SevenQReverse:
     what_breaks_it: str
     rival_explanations: list[str]
     downgrade_conditions: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass
@@ -92,6 +125,9 @@ class Objection:
     objection_text: str
     severity: str
 
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
 
 @dataclass
 class PressureReport:
@@ -100,3 +136,12 @@ class PressureReport:
     reverse_results: list[SevenQReverse]
     objections: list[Objection]
     evidence_ledger: EvidenceLedger
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "paper_uuid": self.paper_uuid,
+            "forward_results": [result.to_dict() for result in self.forward_results],
+            "reverse_results": [result.to_dict() for result in self.reverse_results],
+            "objections": [objection.to_dict() for objection in self.objections],
+            "evidence_ledger": self.evidence_ledger.to_dict(),
+        }

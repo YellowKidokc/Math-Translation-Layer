@@ -1,105 +1,131 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-import json
 import re
 import uuid
-from dataclasses import asdict
-from datetime import datetime, timezone
 from pathlib import Path
 
-import spacy
-from bs4 import BeautifulSoup
-
 from pipeline.models.types import Claim, ClaimSet
-
-TRANSITIONS = ("However,", "Therefore,", "In this section", "As we", "Next,", "Note that", "See also")
-NLP = spacy.load("en_core_web_sm")
+from pipeline.stations.common import clean_document_text, paper_output_dir, read_json, utc_now, write_json
 
 
-def _sections_from_html(text: str):
-    soup = BeautifulSoup(text, "lxml")
-    sections = []
-    current = {"heading": "Document", "paragraphs": []}
-    for el in soup.find_all(["h1", "h2", "h3", "p"]):
-        if el.name in {"h1", "h2", "h3"}:
-            if current["paragraphs"]:
-                sections.append(current)
-            current = {"heading": el.get_text(" ", strip=True), "paragraphs": []}
-        else:
-            p = " ".join(el.get_text(" ", strip=True).split())
-            if p:
-                current["paragraphs"].append(p)
-    if current["paragraphs"]:
-        sections.append(current)
-    return sections
+EXTRACTOR_VERSION = "station_03_claims.0.1"
+TRANSITION_PREFIXES = (
+    "however,",
+    "therefore,",
+    "in this section",
+    "as we",
+    "next,",
+    "note that",
+    "see also",
+)
+CLAIM_PATTERNS = re.compile(
+    r"\b(is|are|was|were|means|requires|causes|leads to|maps to|equals|implies|predicts|proves|shows|demonstrates|must|cannot|can|will|should|states|functions)\b",
+    re.IGNORECASE,
+)
 
 
-def _sections_from_md(text: str):
-    sections, current = [], {"heading": "Document", "paragraphs": []}
-    for block in re.split(r"\n\s*\n", text):
-        lines = [l for l in block.splitlines() if l.strip()]
-        if not lines:
+def sentence_split(text: str) -> list[tuple[str, int, int]]:
+    try:
+        import spacy
+
+        try:
+            nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            nlp = spacy.blank("en")
+            nlp.add_pipe("sentencizer")
+        doc = nlp(text)
+        return [(sent.text.strip(), sent.start_char, sent.end_char) for sent in doc.sents if sent.text.strip()]
+    except Exception:
+        results: list[tuple[str, int, int]] = []
+        for match in re.finditer(r"[^.!?]+[.!?]", text, flags=re.MULTILINE):
+            sentence = match.group(0).strip()
+            if sentence:
+                results.append((sentence, match.start(), match.end()))
+        return results
+
+
+def is_claim(sentence: str) -> bool:
+    stripped = sentence.strip()
+    lower = stripped.lower()
+    if stripped.endswith("?"):
+        return False
+    if len(re.findall(r"\b\w+\b", stripped)) < 8:
+        return False
+    if any(lower.startswith(prefix) for prefix in TRANSITION_PREFIXES):
+        return False
+    if not CLAIM_PATTERNS.search(stripped):
+        return False
+    return True
+
+
+def split_sections(cleaned_text: str) -> list[dict]:
+    sections: list[dict] = []
+    current = {"heading": None, "paragraphs": []}
+    for block in re.split(r"\n\s*\n", cleaned_text):
+        stripped = block.strip()
+        if not stripped:
             continue
-        if lines[0].startswith("#"):
-            if current["paragraphs"]:
+        heading_match = re.match(r"^#{1,6}\s+(.+)$", stripped)
+        if heading_match:
+            if current["heading"] is not None or current["paragraphs"]:
                 sections.append(current)
-            current = {"heading": lines[0].lstrip("#").strip(), "paragraphs": [" ".join(lines[1:]).strip()] if len(lines)>1 else []}
+            current = {"heading": heading_match.group(1).strip(), "paragraphs": []}
         else:
-            current["paragraphs"].append(" ".join(lines).strip())
-    if current["paragraphs"]:
+            current["paragraphs"].append(stripped)
+    if current["heading"] is not None or current["paragraphs"]:
         sections.append(current)
     return sections
 
 
-def _is_claim(sent) -> bool:
-    txt = sent.text.strip()
-    if not txt or txt.endswith("?") or len(txt.split()) < 8:
-        return False
-    if any(txt.startswith(t) for t in TRANSITIONS):
-        return False
-    lower = txt.lower()
-    if re.match(r"^[A-Za-z0-9 _-]+\s+(is|means|refers to)\s+", txt) and not re.search(r"\b(causes?|leads? to|therefore|implies|equals|predicts?)\b", lower):
-        return False
-    has_subj = any(t.dep_ in {"nsubj", "nsubjpass"} for t in sent)
-    has_verb = any(t.pos_ in {"VERB", "AUX"} for t in sent)
-    return has_subj and has_verb
-
-
-def run(paper_uuid: str, output_root: str = "pipeline/output") -> ClaimSet:
-    paper_dir = Path(output_root) / paper_uuid
-    intake = json.loads((paper_dir / "00_intake.json").read_text(encoding="utf-8"))
+def run(paper_uuid: str) -> ClaimSet:
+    output_dir = paper_output_dir(paper_uuid)
+    intake = read_json(output_dir / "00_intake.json")
     source = Path(intake["source_file"])
-    text = source.read_text(encoding="utf-8")
-    fmt = intake["format_detected"]
-    sections = _sections_from_html(text) if fmt == "html" else (_sections_from_md(text) if fmt == "md" else [{"heading":"Document","paragraphs":[p for p in text.split("\n\n") if p.strip()]}])
-
-    cleaned_text = "\n\n".join([p for s in sections for p in s["paragraphs"]])
+    cleaned = clean_document_text(source, intake["format_detected"])
     claims: list[Claim] = []
-    cursor = 0
-    human = []
-    for s in sections:
-        heading = s["heading"]
-        block_lines = [f"## Section: {heading}"]
-        n = 0
-        for i, para in enumerate(s["paragraphs"]):
-            doc = NLP(para)
-            for sent in doc.sents:
-                if not _is_claim(sent):
-                    continue
-                txt = sent.text.strip()
-                start = cleaned_text.find(txt, cursor)
-                if start < 0:
-                    start = cleaned_text.find(txt)
-                end = start + len(txt)
-                cursor = max(cursor, end)
-                c = Claim(str(uuid.uuid4()), paper_uuid, txt, start, end, heading, i, None)
-                claims.append(c)
-                n += 1
-                block_lines.append(f'{n}. [{c.claim_uuid[:8]}] "{txt}" (para {i}, chars {start}-{end})')
-        if len(block_lines) > 1:
-            human.append("\n".join(block_lines))
 
-    out = ClaimSet(paper_uuid=paper_uuid, claims=claims, extraction_timestamp=datetime.now(timezone.utc).isoformat(), extractor_version="station_03_v1")
-    (paper_dir / "03_claims.json").write_text(json.dumps({**asdict(out), "claims": [asdict(c) for c in claims]}, indent=2), encoding="utf-8")
-    (paper_dir / "03_claims_human.md").write_text("\n\n".join(human) + "\n", encoding="utf-8")
-    return out
+    for section in split_sections(cleaned):
+        heading = section["heading"]
+        for paragraph_index, paragraph in enumerate(section["paragraphs"], start=1):
+            paragraph_start = cleaned.find(paragraph)
+            for sentence, local_start, local_end in sentence_split(paragraph):
+                if not is_claim(sentence):
+                    continue
+                source_start = paragraph_start + local_start if paragraph_start >= 0 else local_start
+                source_end = paragraph_start + local_end if paragraph_start >= 0 else local_end
+                claims.append(
+                    Claim(
+                        claim_uuid=str(uuid.uuid4()),
+                        paper_uuid=paper_uuid,
+                        claim_text=sentence,
+                        source_span_start=source_start,
+                        source_span_end=source_end,
+                        section_heading=heading,
+                        paragraph_index=paragraph_index,
+                    )
+                )
+
+    claim_set = ClaimSet(
+        paper_uuid=paper_uuid,
+        claims=claims,
+        extraction_timestamp=utc_now(),
+        extractor_version=EXTRACTOR_VERSION,
+    )
+    write_json(output_dir / "03_claims.json", claim_set.to_dict())
+    write_human_claims(output_dir / "03_claims_human.md", claim_set)
+    return claim_set
+
+
+def write_human_claims(path: Path, claim_set: ClaimSet) -> None:
+    lines = [f"# Claim Extraction - {claim_set.paper_uuid}", ""]
+    current_section = object()
+    for index, claim in enumerate(claim_set.claims, start=1):
+        if claim.section_heading != current_section:
+            current_section = claim.section_heading
+            lines += ["", f"## Section: {claim.section_heading or 'Untitled'}", ""]
+        short = claim.claim_uuid.split("-")[0]
+        lines.append(
+            f"{index}. [{short}] \"{claim.claim_text}\" "
+            f"(para {claim.paragraph_index}, chars {claim.source_span_start}-{claim.source_span_end})"
+        )
+    path.write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
