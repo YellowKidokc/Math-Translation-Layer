@@ -11,6 +11,23 @@ main.js
 *.js.map
 dist/
 coverage/
+workflow_output/
+exports/*
+!exports/
+!exports/README.md
+
+# Private/local workspace material
+_private/
+David/
+.env
+.env.*
+!.env.example
+*.local.*
+
+# Working source tables / office exports
+*.xlsx
+*.xlsm
+*.xls
 
 # macOS
 .DS_Store

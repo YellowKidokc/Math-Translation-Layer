@@ -17,10 +17,10 @@
       "C"
     ],
     "canonicalInputs": [
-      "D:\\GitHub\\Math-Translation-Layer\\CODEX_BRIEFING.md",
-      "\\\\192.168.1.177\\Desktop\\Cannon\\00_READ_ME_FIRST.md",
-      "\\\\192.168.1.177\\Desktop\\Cannon\\01_FORMAL_LAYER_Definition10.md",
-      "\\\\192.168.1.177\\Desktop\\Cannon\\02_PHYSICAL_THEOLOGICAL_LAYER_TenFactorTable.md"
+      "public-release:README.md",
+      "public-release:IDENTIFIER_POLICY.md",
+      "public-release:NLP_REVIEW_EVENTS.md",
+      "private-canon:not-included"
     ]
   },
   "aliases": [

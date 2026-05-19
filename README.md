@@ -2,15 +2,15 @@
 
 Standalone TypeScript math translation engine with a strict `parse -> translate -> render` pipeline, a pluggable dictionary system, a CLI proof path, and a browser overlay for site integration.
 
-The Theophysics dictionary is the first bundled canon artifact. It lives at [src/dictionaries/theophysics.json](/D:/GitHub/Math-Translation-Layer/src/dictionaries/theophysics.json) and is designed to be reviewed directly against the canon sources.
+The Theophysics dictionary is the first bundled canon artifact. It lives at `src/dictionaries/theophysics.json` and is designed to be reviewed directly against the public canon notes included with this release.
 
 ## What Ships Now
 
-- Pure TypeScript core in [src/core](/D:/GitHub/Math-Translation-Layer/src/core)
-- Theophysics canon dictionary in [src/dictionaries](/D:/GitHub/Math-Translation-Layer/src/dictionaries)
-- CLI in [src/cli/index.ts](/D:/GitHub/Math-Translation-Layer/src/cli/index.ts)
-- Browser overlay in [src/browser/overlay.ts](/D:/GitHub/Math-Translation-Layer/src/browser/overlay.ts)
-- Legacy compatibility shim in [theophysics-math-translator.ts](/D:/GitHub/Math-Translation-Layer/theophysics-math-translator.ts)
+- Pure TypeScript core in `src/core`
+- Theophysics canon dictionary in `src/dictionaries`
+- CLI in `src/cli/index.ts`
+- Browser overlay in `src/browser/overlay.ts`
+- Legacy compatibility shim in `theophysics-math-translator.ts`
 
 ## Architecture
 
@@ -64,7 +64,7 @@ node dist/src/cli/index.js translate --file article.html --mode structural --ren
 Scan a folder:
 
 ```bash
-node dist/src/cli/index.js scan --path "\\\\192.168.1.177\\Desktop\\faiththru Physics\\faiththruphysics.com-deploy-cannotical" --report text
+node dist/src/cli/index.js scan --path "./tests/fixtures" --report text
 ```
 
 Inspect bundled dictionaries:
@@ -73,6 +73,44 @@ Inspect bundled dictionaries:
 node dist/src/cli/index.js dictionary list
 node dist/src/cli/index.js dictionary inspect --dictionary theophysics
 ```
+
+## Click-To-Run TTS Workflow
+
+For HTML/articles that need the math layer before audio, double-click:
+
+```text
+RUN_MATH_TTS_WORKFLOW.bat
+```
+
+The menu is an intake wizard. It can:
+
+- point at one file, a recursive folder, or a `.txt` list of many paper paths
+- ask whether to process HTML, Markdown, text, or all supported files
+- run a dry pass with Math Translation only
+- run TTS only, skipping Math Translation
+- run Math Translation first, pause for review, then push prepared text to TTS
+- copy original source files into `workflow_output/source/<run-id>`
+- rip readable Markdown into `workflow_output/markdown/<run-id>`
+- write TTS-ready text into `workflow_output/prepared/<run-id>`
+- optionally zip the copied source, Markdown, prepared text, logs, and audio folders
+
+For HTML articles, the TTS reading order is intentional:
+
+1. branded opener, defaulting to `Theophysics. David Lowe. POF 2828.`
+2. title
+3. subtitle
+4. paper body
+5. appendix material such as key finding, critical insight, rigor, blackboard, audit, kill conditions, and article stats
+
+The extractor skips navigation, tab controls, media controls, hero images, tag pills, and other page chrome. Displayed equation boxes read as: `See the equation below. In plain English: ...`, then use the Math Translation Layer output and any human-facing explanatory note.
+
+The underlying command is:
+
+```bash
+node scripts/prepare-tts-workflow.js --input "./tests/fixtures/convergence-01-why-god-drown-everybody.html" --run-tts
+```
+
+Use `--list paper-list-template.txt` when processing many files or folders.
 
 ## Browser Overlay
 
@@ -108,10 +146,8 @@ The test suite covers:
 - CLI behavior
 - browser overlay behavior against a real article-shaped fixture
 
-## Canonical Inputs
+## Public / Private Boundary
 
-- [CODEX_BRIEFING.md](/D:/GitHub/Math-Translation-Layer/CODEX_BRIEFING.md)
-- `\\192.168.1.177\Desktop\Cannon\00_READ_ME_FIRST.md`
-- `\\192.168.1.177\Desktop\Cannon\01_FORMAL_LAYER_Definition10.md`
-- `\\192.168.1.177\Desktop\Cannon\02_PHYSICAL_THEOLOGICAL_LAYER_TenFactorTable.md`
-- `\\192.168.1.177\Desktop\faiththru Physics\faiththruphysics.com-deploy-cannotical\_archive\convergence\convergence-01-why-god-drown-everybody.html`
+This repository is the public translation engine. Private canon workbooks, local article paths, generated audio/text output, and AI handoff archives stay outside GitHub under `_private/`, `David/`, or ignored runtime folders.
+
+See `docs/GITHUB_PREFLIGHT_STRUCTURE.md` for the public station map and `docs/AI_WIRING_PROMPT.md` for the online-AI wiring prompt.

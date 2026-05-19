@@ -1,0 +1,8 @@
+# Put one file or folder per line.
+# Blank lines and lines starting with # are ignored.
+#
+# Examples:
+# .\tests\fixtures\convergence-01-why-god-drown-everybody.html
+# C:\path\to\your\articles
+#
+.\tests\fixtures\convergence-01-why-god-drown-everybody.html
