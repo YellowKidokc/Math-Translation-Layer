@@ -1,6 +1,6 @@
 # Online AI Wiring Prompt
 
-Use this prompt after the repository is clean and pushed.
+Use this prompt after the repository is clean and pushed. For the fuller multi-AI prompt sequence, start with `docs/PROMPT_PACK.md`.
 
 ```text
 You are working in the Math Translation Layer repository. Your job is to wire the public station structure without exposing private/local backside material.
