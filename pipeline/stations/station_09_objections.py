@@ -1,40 +1,77 @@
-from __future__ import annotations
-import json,re,uuid
-from datetime import datetime, timezone
+﻿from __future__ import annotations
+
+import re
+import uuid
 from pathlib import Path
 
-def run(paper_uuid:str, output_root:str='pipeline/output'):
-    d=Path(output_root)/paper_uuid
-    claims=json.loads((d/'03_claims.json').read_text())['claims']
-    fwd={r['claim_uuid']:r for r in json.loads((d/'06_7q_forward.json').read_text())['results']}
-    ev={}
-    for r in json.loads((d/'05_evidence.json').read_text())['rows']: ev.setdefault(r['claim_uuid'],[]).append(r)
-    objections=[]
-    for c in claims:
-      txt=c['claim_text']; cid=c['claim_uuid']; ident=fwd[cid]['identity']
-      if re.search(r'\balways|never|proves|impossible\b',txt,re.I): objections.append(("overclaim","Absolute language without formal proof reference","critical"))
-      if ident=='bridge' and not re.search(r'\bmap|mapping|isomorphism|correspond\b',txt,re.I): objections.append(("category_error","Cross-domain bridge without explicit mapping justification","critical"))
-      if any(r['strength']=='missing' for r in ev.get(cid,[])): objections.append(("empirical_gap","Claim has missing evidence row","serious"))
-      if fwd[cid]['mechanism']=='unstated' and fwd[cid]['consequence']=='explicit': objections.append(("logical_gap","Consequence stated without mechanism","serious"))
-      for t,otxt,sev in objections[-4:]:
-          pass
-      for t,otxt,sev in [o for o in objections if False]:
-          pass
-      # append per-claim
-      local=[]
-      if re.search(r'\balways|never|proves|impossible\b',txt,re.I): local.append(("overclaim","Absolute language without formal proof reference","critical"))
-      if ident=='bridge' and not re.search(r'\bmap|mapping|isomorphism|correspond\b',txt,re.I): local.append(("category_error","Cross-domain bridge without explicit mapping justification","critical"))
-      if any(r['strength']=='missing' for r in ev.get(cid,[])): local.append(("empirical_gap","Claim has missing evidence row","serious"))
-      if fwd[cid]['mechanism']=='unstated' and fwd[cid]['consequence']=='explicit': local.append(("logical_gap","Consequence stated without mechanism","serious"))
-      if not local: local.append(("missing_definition","Potential term-definition gap","minor"))
-      for t,txto,sev in local:
-        objections.append({"objection_uuid":str(uuid.uuid4()),"claim_uuid":cid,"objection_type":t,"objection_text":txto,"severity":sev})
-    payload={"paper_uuid":paper_uuid,"timestamp":datetime.now(timezone.utc).isoformat(),"objections":objections}
-    (d/'09_objections.json').write_text(json.dumps(payload,indent=2))
-    groups={"critical":[],"serious":[],"minor":[]}
-    for o in objections: groups[o['severity']].append(o)
-    lines=["## Critical Objections"]+[f"- [{o['claim_uuid'][:8]}]: {o['objection_text']} ({o['objection_type']})" for o in groups['critical']]
-    lines+= ["\n## Serious Objections"]+[f"- [{o['claim_uuid'][:8]}]: {o['objection_text']} ({o['objection_type']})" for o in groups['serious']]
-    lines+= ["\n## Minor Objections"]+[f"- [{o['claim_uuid'][:8]}]: {o['objection_text']} ({o['objection_type']})" for o in groups['minor']]
-    (d/'09_objections_human.md').write_text("\n".join(lines)+"\n")
-    return payload
+from pipeline.models.types import Objection
+from pipeline.stations.common import paper_output_dir, read_json, write_json
+
+
+ABSOLUTES = re.compile(r"\b(always|never|proves|impossible|beyond doubt|only|all|none)\b", re.IGNORECASE)
+TERMS_REQUIRING_DEFINITION = re.compile(r"\b(coherence|isomorphism|substrate|operator|phase transition|reference class)\b", re.IGNORECASE)
+
+
+def add(objections: list[Objection], claim_uuid: str, objection_type: str, text: str, severity: str) -> None:
+    objections.append(
+        Objection(
+            objection_uuid=str(uuid.uuid4()),
+            claim_uuid=claim_uuid,
+            objection_type=objection_type,
+            objection_text=text,
+            severity=severity,
+        )
+    )
+
+
+def run(paper_uuid: str) -> list[Objection]:
+    output_dir = paper_output_dir(paper_uuid)
+    claims = read_json(output_dir / "03_claims.json")["claims"]
+    evidence_rows = read_json(output_dir / "05_evidence.json")["rows"]
+    forward = {row["claim_uuid"]: row for row in read_json(output_dir / "06_7q_forward.json")["results"]}
+    evidence_by_claim: dict[str, list[dict]] = {}
+    for row in evidence_rows:
+        evidence_by_claim.setdefault(row["claim_uuid"], []).append(row)
+
+    objections: list[Objection] = []
+    for claim in claims:
+        claim_uuid = claim["claim_uuid"]
+        text = claim["claim_text"]
+        fwd = forward.get(claim_uuid, {})
+        lower = text.lower()
+        evidence = evidence_by_claim.get(claim_uuid, [])
+        has_missing_only = evidence and all(row["strength"] == "missing" for row in evidence)
+
+        if ABSOLUTES.search(text):
+            add(objections, claim_uuid, "overclaim", "Absolute language requires formal proof, source support, or narrowing.", "critical")
+        if fwd.get("scope") == "physics/theology bridge" and not any(word in lower for word in ["maps", "bridge", "isomorphism", "register"]):
+            add(objections, claim_uuid, "category_error", "Cross-domain claim needs explicit mapping justification.", "critical")
+        if TERMS_REQUIRING_DEFINITION.search(text) and "means" not in lower and "defined" not in lower:
+            add(objections, claim_uuid, "missing_definition", "Technical term appears without an immediate definition.", "minor")
+        if fwd.get("identity") == "empirical" and has_missing_only:
+            add(objections, claim_uuid, "empirical_gap", "Empirical-style claim has no nearby detected evidence.", "serious")
+        if fwd.get("consequence") == "consequence not explicit" and any(word in lower for word in ["therefore", "implies", "so"]):
+            add(objections, claim_uuid, "logical_gap", "Consequence language appears but the mechanism is weak.", "serious")
+        if fwd.get("falsifiability") == "needs_test_condition" and any(word in lower for word in ["predict", "should", "must"]):
+            add(objections, claim_uuid, "scope_violation", "Strong scope language needs an explicit test condition.", "serious")
+
+    write_json(output_dir / "09_objections.json", {"paper_uuid": paper_uuid, "objections": [item.to_dict() for item in objections]})
+    write_human(output_dir / "09_objections_human.md", paper_uuid, objections)
+    return objections
+
+
+def write_human(path: Path, paper_uuid: str, objections: list[Objection]) -> None:
+    grouped = {
+        "critical": [item for item in objections if item.severity == "critical"],
+        "serious": [item for item in objections if item.severity == "serious"],
+        "minor": [item for item in objections if item.severity == "minor"],
+    }
+    lines = [f"# Objection Report - {paper_uuid}", ""]
+    for severity, title in [("critical", "Critical Objections"), ("serious", "Serious Objections"), ("minor", "Minor Objections")]:
+        lines += [f"## {title}", ""]
+        if not grouped[severity]:
+            lines.append("- None detected.")
+        for objection in grouped[severity]:
+            lines.append(f"- `{objection.claim_uuid[:8]}` {objection.objection_text} ({objection.objection_type})")
+        lines.append("")
+    path.write_text("\n".join(lines), encoding="utf-8")

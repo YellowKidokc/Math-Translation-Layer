@@ -63,18 +63,18 @@ def main() -> int:
         elif station == "06":
             if not paper_uuid:
                 raise SystemExit("Station 06 requires Station 00 in this first runner.")
-            forward = station_06_7q_forward.run(paper_uuid)
-            print(f"06 7Q Forward complete: {len(forward['results'])} results")
+            results = station_06_7q_forward.run(paper_uuid)
+            print(f"06 7Q Forward complete: {len(results)} results")
         elif station == "07":
             if not paper_uuid:
                 raise SystemExit("Station 07 requires Station 00 in this first runner.")
-            reverse = station_07_7q_reverse.run(paper_uuid)
-            print(f"07 7Q Reverse complete: {len(reverse['results'])} results")
+            results = station_07_7q_reverse.run(paper_uuid)
+            print(f"07 7Q Reverse complete: {len(results)} results")
         elif station == "09":
             if not paper_uuid:
                 raise SystemExit("Station 09 requires Station 00 in this first runner.")
             objections = station_09_objections.run(paper_uuid)
-            print(f"09 Objections complete: {len(objections['objections'])} objections")
+            print(f"09 Objections complete: {len(objections)} objections")
         elif station == "13":
             if not paper_uuid:
                 raise SystemExit("Station 13 requires Station 00 in this first runner.")
