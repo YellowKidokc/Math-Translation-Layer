@@ -28,10 +28,15 @@ def slugify(value: str) -> str:
 
 def normalize_latex(value: str) -> str:
     normalized = html.unescape(value or "")
+    normalized = re.sub(r"^\\\[(.*)\\\]$", r"\1", normalized.strip(), flags=re.DOTALL)
+    normalized = re.sub(r"^\\\((.*)\\\)$", r"\1", normalized.strip(), flags=re.DOTALL)
     normalized = re.sub(r"\s+", " ", normalized).strip()
     while "\\\\" in normalized:
         normalized = normalized.replace("\\\\", "\\")
     normalized = normalized.replace("S_{eff}", "S_eff")
+    normalized = normalized.replace("\\rac{T_i}{D_i}", "T_i/D_i")
+    normalized = normalized.replace(" + ", "+")
+    normalized = normalized.replace("(1+", "(1 + ")
     return normalized
 
 

@@ -84,3 +84,11 @@ def test_math_appendix_html_contains_mathjax_and_equation_blocks(tmp_path):
     catalog_data = json.loads(catalog.read_text(encoding="utf-8"))
     assert any(item["matched"] for item in catalog_data)
     assert any(not item["matched"] for item in catalog_data)
+
+
+def test_dedupes_bracket_wrapped_equations():
+    module = load_module()
+    raw = """<div class='math'>\[x+1\]</div><p>$$x+1$$</p>"""
+    soup = module.BeautifulSoup(raw, "lxml")
+    equations = module.extract_equations(raw, soup)
+    assert len(equations) == 1

@@ -81,3 +81,12 @@ def test_meta_json_contains_required_fields(tmp_path):
     for output_file in meta["outputFiles"]:
         assert Path(output_file).exists()
         assert Path(output_file).read_text(encoding="utf-8").strip()
+
+
+def test_gtq_shape_ignores_chrome_and_aside():
+    module = load_module()
+    fixture = ROOT / "tests" / "fixtures" / "gtq-shaped.html"
+    document = module.extract_document(fixture)
+    assert "sidebar nav claim" not in document.body_text
+    assert "aside claim leak" not in document.body_text
+    assert "Real claim" in document.body_text
