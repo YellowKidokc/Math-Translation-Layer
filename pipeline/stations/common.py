@@ -70,10 +70,21 @@ def clean_document_text(path: Path, fmt: str) -> str:
     raw = path.read_text(encoding="utf-8", errors="replace")
     if fmt == "html":
         soup = BeautifulSoup(raw, "lxml")
-        for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
+        for tag in soup(["script", "style", "nav", "footer", "header", "aside", "noscript"]):
             tag.decompose()
+        container = (
+            soup.select_one("article.story")
+            or soup.select_one("main article")
+            or soup.find("article")
+            or soup.find("main")
+            or soup.body
+            or soup
+        )
+        for selector in ["nav", "header", "footer", "aside", "script", "style", "noscript", "audio", "video", ".audio-dock", ".media-controls", ".tab-controls", ".sidebar", ".chrome", ".menu"]:
+            for node in container.select(selector):
+                node.decompose()
         parts: list[str] = []
-        for element in soup.find_all(["h1", "h2", "h3", "p", "li"]):
+        for element in container.find_all(["h1", "h2", "h3", "p", "li", "blockquote", "figcaption"]):
             text = re.sub(r"\s+", " ", element.get_text(" ", strip=True)).strip()
             if not text:
                 continue
