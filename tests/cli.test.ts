@@ -37,7 +37,7 @@ describe("cli", () => {
     });
 
     it("scans a folder and reports unmapped equations", async () => {
-        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "math-translation-engine-"));
+        const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "math-translation-layer-"));
         const filePath = path.join(tempDir, "sample.md");
         fs.writeFileSync(filePath, "$$X = Y$$\n$$\\chi = G \\cdot M \\cdot E \\cdot S \\cdot T \\cdot K \\cdot R \\cdot Q \\cdot F \\cdot C$$");
 
