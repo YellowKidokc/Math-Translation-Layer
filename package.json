@@ -1,7 +1,7 @@
 {
-  "name": "math-translation-engine",
+  "name": "math-translation-layer",
   "version": "0.1.0",
-  "description": "Standalone TypeScript math translation engine with pluggable dictionaries, CLI tooling, and browser overlay support.",
+  "description": "Standalone TypeScript Math Translation Layer with pluggable dictionaries, CLI tooling, and browser overlay support.",
   "main": "dist/src/core/index.js",
   "bin": {
     "math-translate": "dist/src/cli/index.js"

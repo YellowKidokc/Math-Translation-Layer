@@ -18,6 +18,14 @@ describe("dictionary", () => {
         ]);
     });
 
+    it("publishes dictionary governance versions", () => {
+        const dictionary = loadDictionary("theophysics");
+        expect(dictionary.data.metadata.dictionary_version).toBeTruthy();
+        expect(dictionary.data.metadata.canon_version).toBeTruthy();
+        expect(dictionary.data.metadata.schema_version).toBeTruthy();
+        expect(dictionary.data.metadata.version).toBe(dictionary.data.metadata.dictionary_version);
+    });
+
     it("has summaries for every equation rule", () => {
         const dictionary = loadDictionary("theophysics");
         for (const equation of dictionary.data.equations) {

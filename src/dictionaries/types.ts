@@ -4,6 +4,9 @@ export interface DictionaryMetadata {
     id: string;
     name: string;
     version: string;
+    dictionary_version: string;
+    canon_version: string;
+    schema_version: string;
     description: string;
     factorOrder: string[];
     canonicalInputs: string[];

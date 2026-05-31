@@ -21,7 +21,10 @@
       "public-release:IDENTIFIER_POLICY.md",
       "public-release:NLP_REVIEW_EVENTS.md",
       "private-canon:not-included"
-    ]
+    ],
+    "dictionary_version": "2026.05.02",
+    "canon_version": "public-canon-2026.05.02",
+    "schema_version": "dictionary-schema-1.0.0"
   },
   "aliases": [
     {

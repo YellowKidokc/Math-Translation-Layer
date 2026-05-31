@@ -1,6 +1,6 @@
-# Math Translation Engine
+# Math Translation Layer
 
-Standalone TypeScript math translation engine with a strict `parse -> translate -> render` pipeline, a pluggable dictionary system, a CLI proof path, and a browser overlay for site integration.
+Standalone TypeScript Math Translation Layer with a strict `parse -> translate -> render` pipeline, a pluggable dictionary system, a CLI proof path, and a browser overlay for site integration.
 
 The Theophysics dictionary is the first bundled canon artifact. It lives at `src/dictionaries/theophysics.json` and is designed to be reviewed directly against the public canon notes included with this release.
 
@@ -30,6 +30,16 @@ Core public API:
 - `translateMath(ast, { dictionary, mode })`
 - `renderMath(translated, { renderer })`
 - `translate({ input, format, dictionary, mode, renderer })`
+
+
+## Repository Guides
+
+- `docs/SPECIFICATION.md` defines input formats, AST expectations, translation stages, rendering stages, expected outputs, acceptance criteria, and failure modes.
+- `docs/ARCHITECTURE.md` explains the parse → translate → render pipeline, browser overlay path, CLI path, and dictionary loading path.
+- `docs/ROADMAP.md` lists current capabilities and future milestones for dictionaries, renderers, and plugin architecture.
+- `docs/DICTIONARY_VERSIONING.md` defines dictionary governance fields and version-change rules.
+- `examples/translation-examples.md` provides reviewed example translations for onboarding and regression planning.
+- `REPO_HEALTH_CHECK.md` is the repository maturity checklist for release and AI handoff.
 
 ## Theophysics Canon Rules
 
@@ -148,6 +158,6 @@ The test suite covers:
 
 ## Public / Private Boundary
 
-This repository is the public translation engine. Private canon workbooks, local article paths, generated audio/text output, and AI handoff archives stay outside GitHub under `_private/`, `David/`, or ignored runtime folders.
+This repository is the public Math Translation Layer. Private canon workbooks, local article paths, generated audio/text output, and AI handoff archives stay outside GitHub under `_private/`, `David/`, or ignored runtime folders.
 
 See `docs/GITHUB_PREFLIGHT_STRUCTURE.md` for the public station map and `docs/AI_WIRING_PROMPT.md` for the online-AI wiring prompt.
